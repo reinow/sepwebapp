@@ -39,11 +39,13 @@ webapp_rb_files(family)
 
 To define a Perl web application with identity *cms*, controlled by Supervisord, which forks children into its own domain:
 
+```
 webapp_base(cms)
 webapp_supervisord_domain(cms)
 webapp_base(cmschild)
 webapp_pl_files(childcms)
 webapp_child_domain(cms, childcms)
+```
 
 It could be useful that the worker processes have its own security context, rather then sharing the security with the parent process, thus fullfilling necessary minimum privileges for the worker processes as well as for the parent process. Of course, the web application and application server must support forking children into its own domain.
 
@@ -74,7 +76,7 @@ system_u:system_r:webapp_sevhost_t:s0-s15:c0.c1023 3641 ? Sl  0:00 /usr/local/sb
 system_u:system_r:webapp_sevhost_t:s0-s15:c0.c1023 3642 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
 ```
 
-For a full list of templates and interfaces, see [templates and interfaces documentation](http://www.oribium.net/services_webapp.html "Templates and Interfaces Documentation").
+For a full list of templates and interfaces, see [templates and interfaces documentation](http://www.oribium.net/services_webapp/ "Templates and Interfaces Documentation").
 
 ##Types
 
