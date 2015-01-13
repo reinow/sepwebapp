@@ -1,0 +1,42 @@
+## Copyright (c) 2013, 2014 Reino Wallin
+
+##	This program is free software; you can redistribute it and/or
+##	modify it under the terms of the GNU General Public License as
+##	published by the Free Software Foundation; either version 3 of the
+##	License, or (at your option) any later version. 
+##
+##	This program is distributed in the hope that it will be useful, but
+##	WITHOUT ANY WARRANTY; without even the implied warranty of
+##	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+##	General Public License for more details.
+
+# This is an example of a Python web application
+# with identity cms started with Supervisord
+#/var/www/example\.com/saas/cms(/.*)?				gen_context(system_u:object_r:webapp_cms_content_t,s0)
+#/var/www/example\.com/saas/cms/logs(/.*)?			gen_context(system_u:object_r:webapp_cms_log_t,s0)
+#/var/www/example\.com/saas/cms/cache(/.*)?			gen_context(system_u:object_r:webapp_cms_cache_t,s0)
+#/var/www/example\.com/saas/cms/conf(/.*)?			gen_context(system_u:object_r:webapp_cms_config_t,s0)
+#/var/www/example\.com/saas/cms/static/media/uploads(/.*)?	gen_context(system_u:object_r:webapp_cms_rw_content_t,s0)
+#/var/www/example\.com/saas/cms/.*\.(py|pyc|pyo)	--	gen_context(system_u:object_r:webapp_cms_py_script_t,s0)
+#/var/www/example\.com/saas/cms/app\.(py|pyc|pyo)	--	gen_context(system_u:object_r:webapp_cms_exec_t,s0)
+
+# This is an example of a PHP web application
+# whith identity joomla where Linux namespace is in use
+#/var/www/vhosts/example\.com/public_html(/.*)?			gen_context(system_u:object_r:webapp_joomla_content_t,s0)
+#/var/www/vhosts/example\.com/public_html/logs(/.*)?		gen_context(system_u:object_r:webapp_joomla_log_t,s0)
+#/var/www/vhosts/example\.com/public_html/cache(/.*)?		gen_context(system_u:object_r:webapp_joomla_cache_t,s0)
+#/var/www/vhosts/example\.com/public_html/config(/.*)?		gen_context(system_u:object_r:webapp_joomla_config_t,s0)
+#/var/www/vhosts/example\.com/public_html/tmp(/.*)?		gen_context(system_u:object_r:webapp_joomla_tmp_t,s0)
+#/var/www/vhosts/example\.com/mount(/.*)?			gen_context(system_u:object_r:webapp_joomla_mount_t,s0)
+#/var/www/vhosts/example\.com/mount/etc(/.*)?			gen_context(system_u:object_r:webapp_joomla_etc_t,s0)
+#/var/www/vhosts/example\.com/mount/etc/ld\.so\.cache	--	gen_context(system_u:object_r:webapp_joomla_ld_so_cache_t,s0)
+#/var/www/vhosts/example\.com/mount/etc/hosts		--	gen_context(system_u:object_r:webapp_joomla_net_conf_t,s0)
+#/var/www/vhosts/example\.com/mount/etc/mtab		--	gen_context(system_u:object_r:webapp_joomla_etc_runtime_t,s0)
+#/var/www/vhosts/example\.com/mount/etc/php\.ini	--	gen_context(system_u:object_r:webapp_joomla_php_conf_t,s0)
+#/var/www/vhosts/example\.com/mount/etc/php\.d(/.*)?		gen_context(system_u:object_r:webapp_joomla_php_conf_t,s0)
+#/var/www/vhosts/example\.com/mount/etc/resolv\.conf	--	gen_context(system_u:object_r:webapp_joomla_net_conf_t,s0)
+#/var/www/vhosts/example\.com/mount/tmp(/.*)?			gen_context(system_u:object_r:webapp_joomla_tmp_t,s0)
+#/var/www/vhosts/example\.com/mount/var/tmp(/.*)?		gen_context(system_u:object_r:webapp_joomla_tmp_t,s0)
+#/var/www/vhosts/example\.com/mount/var/run(/.*)?		gen_context(system_u:object_r:webapp_joomla_var_run_t,s0)
+#/var/www/vhosts/example\.com/public_html/.*\.php	--	gen_context(system_u:object_r:webapp_joomla_php_script_t,s0)
+
