@@ -1,0 +1,129 @@
+policy_module(webapp, 1.1.8)
+
+# ------------------------------------------
+# Webapp security policy module
+# ------------------------------------------
+
+## Copyright (c) 2013, 2014 Reino Wallin
+
+## <summary>SELinux policy module for web applications</summary>
+## Author: Reino Wallin
+
+##	This program is free software; you can redistribute it and/or
+##	modify it under the terms of the GNU General Public License as
+##	published by the Free Software Foundation; either version 3 of the
+##	License, or (at your option) any later version. 
+##
+##	This program is distributed in the hope that it will be useful, but
+##	WITHOUT ANY WARRANTY; without even the implied warranty of
+##	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+##	General Public License for more details.
+
+# Attributes
+
+# Attribute for webapp domains
+attribute webapp_domain;
+
+# Attribute for all web application files
+attribute webapp_file_type;
+
+# Attribute for web application runtime files
+attribute webapp_var_run_type;
+
+# Attribute for web application cache files
+attribute webapp_cache_type;
+
+# Attribute for web application config files
+attribute webapp_config_type;
+
+# Attribute for content files
+attribute webapp_content_type;
+
+# Attribute for web application exec files
+attribute webapp_exec_type;
+
+# Attribute for web application etc files
+# In the case Linux fs namespace is used to
+# bind mount a custom etc directory
+attribute webapp_etc_type;
+
+# Attribute for web application etc runtime files
+# In the case Linux fs namespace is used to
+# bind mount a custom etc directory
+attribute webapp_etc_runtime_type;
+
+# Attribute for web application ld.so.cache files
+# In the case Linux fs namespace is used to
+# bind mount a custom etc directory
+attribute webapp_ld_so_cache_type;
+
+# Attribute for web application log files
+attribute webapp_log_type;
+
+# Attribute for web application net config files
+# In the case Linux fs namespace is used to
+# bind mount a custom etc directory
+attribute webapp_net_conf_type;
+
+# Attribute for web application mount files
+attribute webapp_mount_type;
+
+# Attribute for web application php ini files
+# In the case Linux fs namespace is used to
+# bind mount a custom etc directory
+# with custom php ini files
+attribute webapp_php_conf_type;
+
+# Attribute for web application ports
+attribute webapp_port_type;
+
+# Attribute for web application script files
+attribute webapp_script_type;
+
+# Attribute for web application tmp files
+attribute webapp_tmp_type;
+
+# Attribute for web application files on 
+# a virtual memory filesystem (tmpfs)
+attribute webapp_tmpfs_type;
+
+# Attribute for web application network interfaces
+attribute webapp_netif_type;
+
+# Attribute for web application network nodes
+attribute webapp_node_type;
+
+# Types
+
+# Type for uwsgi executable
+type uwsgi_exec_t;
+files_type(uwsgi_exec_t)
+
+# Web applications
+# Add your web applications below.
+
+# This is an example of a Python web application
+# with identity cms started with Supervisord
+
+#webapp_base(cms)
+#webapp_supervisord_domain(cms)
+#webapp_py_files(cms)
+
+# This is an example of a Ruby web application
+# with identity family started with an init script
+
+#webapp_base(family)
+#webapp_init_domain(family)
+#webapp_rb_files(family)
+
+# This is an example of a PHP web application
+# with identity shop, with FTP acccess to the files
+
+#webapp_base(shop)
+#webapp_php_files(shop)
+#gen_require(`
+#	type ftpd_t;
+#')
+#webapp_manage_files(shop, ftpd_t)
+#webapp_manage_php_scripts(shop, ftpd_t)
+

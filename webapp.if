@@ -1,0 +1,5321 @@
+## SELinux policy module for web applications
+## Copyright (c) 2013, 2014 Reino Wallin
+
+## <summary>SELinux policy module for web applications</summary>
+## Author: Reino Wallin
+
+##	This program is free software; you can redistribute it and/or
+##	modify it under the terms of the GNU General Public License as
+##	published by the Free Software Foundation; either version 3 of the
+##	License, or (at your option) any later version. 
+##
+##	This program is distributed in the hope that it will be useful, but
+##	WITHOUT ANY WARRANTY; without even the implied warranty of
+##	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+##	General Public License for more details.
+
+########################################
+## Domain related templates
+
+########################################
+## <summary>
+##	Web application domain template.
+##	Create a basic web application,
+##      related types, attributes,
+##	and tunabels. Allow the 
+##	domain to perform as a web 
+##	application server process,
+##	and grant basic permissions.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_base',`
+
+	webapp_tunables($1)
+	webapp_define_attributes($1)
+	webapp_types($1)
+	webapp_assign_attributes($1)
+	webapp_perms($1)	
+')
+
+########################################
+## <summary>
+##	Web application tunables template. Create
+##	tunables for a web application domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_tunables',`
+
+        ## <tunable name="webapp_id_anon_read" dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to read public files
+	## used for public file transfer services.
+	## Directories/Files must
+	## be labeled public_content_rw_t.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_anon_read, false)
+
+        ## <tunable name="webapp_id_mod_auth_pam" dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to use mod_auth_pam.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_mod_auth_pam, false)
+
+        ## <tunable name="webapp_id_read_sysctls_net dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to read network sysctls.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_read_sysctls_net, false)
+
+        ## <tunable name="webapp_id_enable_chown dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application process to make
+	## arbitrary changes to file UIDs and GIDs.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_enable_chown, false)
+
+        ## <tunable name="webapp_id_enable_chroot dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application process to change the
+	## apparent root directory for the current
+	## running process and its children.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_enable_chroot, false)
+
+        ## <tunable name="webapp_id_enable_cifs dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to access cifs file systems.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_enable_cifs, false)
+
+	## <tunable name="webapp_id_enable_ftp_server dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to act as a FTP server and
+	## listening on the ftp port.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_ftp_server, false)
+
+	## <tunable name="webapp_id_enable_homedirs dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to read home directories.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_homedirs, false)
+
+	## <tunable name="webapp_id_enable_nfs dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to access nfs file systems
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_nfs, false)
+
+	## <tunable name="webapp_id_enable_openca dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application use OpenCA certification authority.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_openca, false)
+
+	## <tunable name="webapp_id_exec_bin dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute binaries and shell scripts.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_bin, false)
+
+	## <tunable name="webapp_id_exec_hostname dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute hostname
+	## binary in the hostname domain.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_hostname, false)
+
+	## <tunable name="webapp_id_exec_ifconfig dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute ifconfig/ip
+	## binary in the ifconfig domain.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_ifconfig, false)
+
+	## <tunable name="webapp_id_exec_mount dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute mount
+	## binary in the mount domain.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_mount, false)
+
+	## <tunable name="webapp_id_exec_self dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute the 
+	## web application executable.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_self, false)
+
+	## <tunable name="webapp_id_exec_uwsgi dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute uwsgi
+	## web application server executable.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_uwsgi, false)
+
+	## <tunable name="webapp_id_enable_gpg dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to execute gpg.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_gpg, false)
+
+	## <tunable name="webapp_id_anon_write dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to modify public files
+	## used for public file transfer services.
+	## Directories/Files must
+	## be labeled public_content_rw_t.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_anon_write, false)
+
+	## <tunable name="webapp_id_enable_cache dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application file cache.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_cache, false)
+
+	## <tunable name="webapp_id_manage_config dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to manage web application config files
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_manage_config, false)
+
+	## <tunable name="webapp_id_dbus_avahi dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to communicate with avahi service via dbus
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_dbus_avahi, false)
+
+	## <tunable name="webapp_id_use_tty dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application the ability to read/write from/to terminals
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_use_tty, false)
+
+	## <tunable name="webapp_id_read_etc dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to read generic
+	## files in /etc. Allow the domain to have access 
+	## to files such as nsswitch.conf and mime.types.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_read_etc, false)
+
+	## <tunable name="webapp_id_install_mode dftval="false">
+	## <desc>
+	## <p>
+	## Allow manage all web application files.
+	## Suitable for upgrading and installation.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_install_mode, false)
+
+	## <tunable name="webapp_id_execmem dftval="false">
+	## <desc>
+	## <p>
+	## Allow execmem and execstack operations.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_execmem, false)
+
+	## <tunable name="webapp_id_enable_ptrace dftval="false">
+	## <desc>
+	## <p>
+	## Allow process trace
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_ptrace, false)
+
+	## <tunable name="webapp_id_bind_http_port dftval="false">
+	## <desc>
+	## <p>
+	## Allow bind to HTTP port.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_bind_http_port, false)
+
+	## <tunable name="webapp_id_connect_abrt dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to automated bug-reporting
+	## tool via a UNIX stream socket.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_abrt, false)
+
+	## <tunable name="webapp_id_connect_ftp dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to FTP servers.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_ftp, false)
+
+	## <tunable name="webapp_id_connect_http dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to HTTP servers
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_http, false)
+
+	## <tunable name="webapp_id_connect_http_cache dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to HTTP cache servers
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_http_cache, false)
+
+	## <tunable name="webapp_id_connect_gopher dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to Gopher servers
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_gopher, false)
+
+	## <tunable name="webapp_id_connect_memcache dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to memcache.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_memcache, false)
+
+	## <tunable name="webapp_id_connect_openstack dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to openstack.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_openstack, false)
+
+	## <tunable name="webapp_id_connect_sieve dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to Manage Sieve.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_sieve, false)
+
+	## <tunable name="webapp_id_connect_syslog dftval="false">
+	## <desc>
+	## <p>
+	## Allow connect to the system log service (syslog),
+	## to send messages to the system logs.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_syslog, false)
+
+	## <tunable name="webapp_id_enable_nagios dftval="false">
+	## <desc>
+	## <p>
+	## Allow use Nagios IT infrastructure monitoring.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_nagios, false)
+
+	## <tunable name="webapp_id_enable_tuntap dftval="false">
+	## <desc>
+	## <p>
+	## Allow create and use tun and tap devices.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_tuntap, false)
+
+	## <tunable name="webapp_id_tcp_connect dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to connect to the network using TCP.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_tcp_connect, false)
+
+	## <tunable name="webapp_id_tcp_listen dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application listen on TCP port.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_tcp_listen, false)
+
+	## <tunable name="webapp_id_tcp_connect_db dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to connect to databases
+	## over the network via a tcp socket.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_tcp_connect_db, false)
+
+	## <tunable name="webapp_id_auth_use_nsswitch dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to look up user, password,
+	## group, or host information using the name service.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_auth_use_nsswitch, false)
+
+	## <tunable name="webapp_id_connect_pop dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application connect to POP/IMAP servers.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_pop, false)
+
+	## <tunable name="webapp_id_sendmail dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application connect to SMTP servers.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_sendmail, false)
+
+	## <tunable name="webapp_id_connect_whois dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application connect to WHOIS servers.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_whois, false)
+
+	## <tunable name="webapp_id_verify_dns dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to query NS records.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_verify_dns, false)
+
+	## <tunable name="webapp_id_exec_tmp dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to execute its tmp files
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_tmp, false)
+
+	## <tunable name="webapp_id_setrlimit dftval="false">
+	## <desc>
+	## <p>
+	## Allow webapplication to change system limits
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_setrlimit, false)
+
+	## <tunable name="webapp_id_enable_zarafa dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application use Zarafa collaboration software.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_enable_zarafa, false)
+	
+')
+
+########################################
+## <summary>
+##	Web application attributes template.
+##	Define type attributes that are specific
+##	for the web application.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_define_attributes',`
+
+	# Define attribute for web application files
+	attribute webapp_$1_file_type;
+
+')
+
+########################################
+## <summary>
+##	Web application types template. Create types for
+##	a basic web application domain and related files,
+##	packets, port, netif, and node.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_types',`
+
+	gen_require(`
+		attribute netif_type;
+		attribute node_type;
+		attribute polydir;
+		attribute polyparent;
+		attribute webapp_cache_type;
+		attribute webapp_config_type;	
+		attribute webapp_content_type;
+		attribute webapp_etc_type;
+		attribute webapp_etc_runtime_type;
+		attribute webapp_exec_type;
+		attribute webapp_log_type;
+		attribute webapp_mount_type;
+		attribute webapp_tmp_type;
+		attribute webapp_tmpfs_type;
+		attribute webapp_var_run_type;
+		attribute webapp_port_type;
+		attribute webapp_$1_file_type;
+		attribute webapp_netif_type;
+		attribute webapp_node_type;
+	')
+
+	# Domain type
+	type webapp_$1_t;
+	domain_type(webapp_$1_t);
+	role system_r types webapp_$1_t;
+
+	# Port type
+	type webapp_$1_port_t, webapp_port_type;
+	corenet_port(webapp_$1_port_t)
+
+	# Packet types
+	gen_require(`
+		attribute client_packet_type;
+		attribute server_packet_type;
+		attribute packet_type;
+	')
+	type webapp_$1_client_packet_t, packet_type, client_packet_type;
+	type webapp_$1_server_packet_t, packet_type, server_packet_type;
+
+	# Type for cache files
+	# Many CMSs, CRMs and other web apps provide
+	# their own file based cache
+	type webapp_$1_cache_t, webapp_cache_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_cache_t)
+
+	# This type is for website conf file
+	type webapp_$1_config_t, webapp_config_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_config_t)
+
+	# This type is for read only static files
+	type webapp_$1_content_t, webapp_content_type, webapp_$1_file_type, webapp_file_type;
+	typealias webapp_$1_content_t alias webapp_$1_ro_content_t;
+	files_type(webapp_$1_content_t)
+
+	# This type is for read and write static files
+	type webapp_$1_rw_content_t, webapp_content_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_rw_content_t)
+
+	# Type for web application etc files
+	# In the case Linux fs namespace is used to
+	# bind mount a custom etc directory
+	type webapp_$1_etc_t, webapp_etc_type, webapp_$1_file_type, webapp_file_type, polydir;
+	files_config_file(webapp_$1_etc_t)
+
+	# Type for web application etc runtime files
+	# In the case Linux fs namespace is used to
+	# bind mount a custom etc directory
+	type webapp_$1_etc_runtime_t, webapp_etc_runtime_type, webapp_$1_file_type, webapp_file_type;
+	files_config_file(webapp_$1_etc_runtime_t)
+
+	# Type for executable
+	type webapp_$1_exec_t, webapp_exec_type;
+	domain_entry_file(webapp_$1_t, webapp_$1_exec_t, webapp_$1_file_type, webapp_file_type)
+
+	# Type for web application dynamic loader cache files
+	# In the case Linux fs namespace is used to
+	# bind mount a custom etc directory
+	type webapp_$1_ld_so_cache_t, webapp_ld_so_cache_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_ld_so_cache_t)
+
+	# This type is for website log files
+	# Many CMSs, CRMs and other web applications
+	# introduce their own log files located in the web tree
+	type webapp_$1_log_t, webapp_log_type, webapp_$1_file_type, webapp_file_type;
+	logging_log_file(webapp_$1_log_t)
+
+	# Type for web application net config files
+	# In the case Linux fs namespace is used to
+	# bind mount a custom etc directory
+	type webapp_$1_net_conf_t, webapp_net_conf_type, webapp_$1_file_type, webapp_file_type;
+	files_config_file(webapp_$1_net_conf_t)
+
+	# Type for mount files
+	type webapp_$1_mount_t, webapp_mount_type, webapp_$1_file_type, webapp_file_type, polyparent;
+	#files_mountpoint(webapp_$1_mount_t)
+	files_type(webapp_$1_mount_t)
+
+	# Type for web application php ini files
+	# In the case Linux fs namespace is used to
+	# bind mount a custom etc directory
+	# with custom php ini files
+	type webapp_$1_php_conf_t, webapp_php_conf_type, webapp_$1_file_type, webapp_file_type;
+	files_config_file(webapp_$1_php_conf_t)
+
+	# Type for runtime files
+	type webapp_$1_var_run_t, webapp_var_run_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_var_run_t)
+
+	# Type for temporary files
+	type webapp_$1_tmp_t, webapp_tmp_type, webapp_$1_file_type, webapp_file_type;
+	files_tmp_file(webapp_$1_tmp_t)
+
+	# Type for use on a virtual memory filesystem (tmpfs)
+	type webapp_$1_tmpfs_t, webapp_$1_file_type, webapp_file_type;
+	files_tmpfs_file(webapp_$1_tmpfs_t, webapp_tmpfs_type)
+
+	# Type for use for network interface
+	type webapp_$1_netif_t, webapp_netif_type, netif_type;
+
+	# Type for use for network node
+	type webapp_$1_node_t, webapp_node_type, node_type;
+	
+')
+
+########################################
+## <summary>
+##	Web application assign attributes template.
+##	Assign attributes to the web application domain and
+##	its objects.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_assign_attributes',`
+	
+	# Assign the domain to be a web application domain
+	typeattribute webapp_$1_t webapp_domain;
+')
+
+########################################
+## <summary>
+##	Web application Perl files template. 
+##	Create types for a Perl web
+##	application's files, and grant
+##	read permission to these files for
+##	the web	application domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of file type. Example, foo is the
+##	identity of the webapp_foo_pl_script_t file type.
+##	</summary>
+## </param>
+
+template(`webapp_pl_files',`
+
+	gen_require(`
+		attribute webapp_script_type;
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	# This type is used for Perl script files
+	type webapp_$1_pl_script_t, webapp_script_type, webapp_$1_file_type;
+	files_type(webapp_$1_pl_script_t)
+	# Allow the web application domain
+	# to read Perl script files
+	webapp_read_pl_scripts($1, webapp_$1_t)
+
+')
+
+########################################
+## <summary>
+##	Web application PHP files template. 
+##	Create types for a PHP web
+##	application's files, and grant
+##	read permission to these files for
+##	the web	application domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of file type. Example, foo is the
+##	identity of the webapp_foo_php_script_t file type.
+##	</summary>
+## </param>
+
+template(`webapp_php_files',`
+
+	gen_require(`
+		attribute webapp_script_type;
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	# This type is used for PHP script files
+	type webapp_$1_php_script_t, webapp_script_type, webapp_$1_file_type;
+	files_type(webapp_$1_php_script_t)
+	# Allow the web application domain
+	# to read PHP script files
+	webapp_read_php_scripts($1, webapp_$1_t)
+
+')
+
+########################################
+## <summary>
+##	Web application Python files template. 
+##	Create types for a Python web
+##	application's files, and grant
+##	read permission to these files for
+##	the web	application domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of file type. Example, foo is the
+##	identity of the webapp_foo_py_script_t file type.
+##	</summary>
+## </param>
+
+template(`webapp_py_files',`
+
+	gen_require(`
+		attribute webapp_script_type;
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	# This type is used for Python script files
+	type webapp_$1_py_script_t, webapp_script_type, webapp_$1_file_type;
+	files_type(webapp_$1_py_script_t)
+	# Allow the web application domain
+	# to read Python script files
+	webapp_read_py_scripts($1, webapp_$1_t)
+
+')
+
+########################################
+## <summary>
+##	Web application Ruby files template. 
+##	Create types for a Ruby web
+##	application's files, and grant
+##	read permission to these files for
+##	the web	application domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of file type. Example, foo is the
+##	identity of the webapp_foo_rb_script_t file type.
+##	</summary>
+## </param>
+
+template(`webapp_rb_files',`
+
+	gen_require(`
+		attribute webapp_script_type;
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	# This type is used for Ruby script files
+	type webapp_$1_rb_script_t, webapp_script_type, webapp_$1_file_type;
+	files_type(webapp_$1_rb_script_t)
+	# Allow the web application domain
+	# to read Ruby script files
+	webapp_read_rb_scripts($1, webapp_$1_t)
+
+')
+
+########################################
+## <summary>
+##	Web application child domain template.
+##	Allow the child domain to perform as a child
+##	webapp domain with a dynamic transition
+##	from the parent domain to the child domain.
+## </summary>
+## <param name="parent identity">
+##	<summary>
+##	Identity of the parent domain. Example, foo
+##	is the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="child identity">
+##	<summary>
+##	Identity of the child domain. Example, bar
+##	is the identity of the webapp_bar_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_child_domain',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type webapp_$2_t;
+		type webapp_$2_var_run_t;
+		type webapp_$2_tmp_t;
+	')
+
+	webapp_dyntrans($1, $2)
+	webapp_search_content_dirs($2, webapp_$1_t)
+	webapp_read_custom_etc($2, webapp_$1_t)
+	webapp_read_custom_ld_so_cache($2, webapp_$1_t)
+	webapp_read_custom_net_conf($2, webapp_$1_t)
+	webapp_read_custom_php_ini($2, webapp_$1_t)
+	manage_sock_files_pattern(webapp_$1_t, webapp_$2_var_run_t, webapp_$2_var_run_t)
+	manage_files_pattern(webapp_$1_t, webapp_$2_tmp_t, webapp_$2_tmp_t)
+	manage_files_pattern(webapp_$1_t, webapp_$2_log_t, webapp_$2_log_t)
+	webapp_append_log($1, webapp_$2_t)
+
+')
+
+########################################
+## <summary>
+##	Web application init domain template.
+##	Allow the domain to perform as a init
+##	daemon domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_init_domain',`
+
+	gen_require(`
+		type initrc_t;
+		type webapp_$1_t;
+		type webapp_$1_exec_t;
+	')
+
+	type webapp_$1_initrc_exec_t;
+	init_script_file(webapp_$1_initrc_exec_t)
+
+	optional_policy(`
+		init_daemon_domain(webapp_$1_t, webapp_$1_exec_t)
+		ifdef(`enable_mcs',`
+			init_ranged_daemon_domain(webapp_$1_t, webapp_$1_exec_t, s0 - mcs_systemhigh)
+		')
+		ifdef(`enable_mls',`
+			init_ranged_daemon_domain(webapp_$1_t, webapp_$1_exec_t, mls_systemlow - mls_systemhigh)
+		')
+		webapp_read_pid($1, initrc_t)
+		webapp_manage_run_files($1, initrc_t)
+	')
+
+')
+
+########################################
+## <summary>
+##	Web application supervisord 
+##	domain template. Allow the
+##	domain to perform as a
+##	supervisord daemon domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_supervisord_domain',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type webapp_$1_exec_t;
+	')
+
+	optional_policy(`
+		gen_require(`
+			type supervisord_t;
+		')
+		supervisord_service_domain(webapp_$1_t, webapp_$1_exec_t)
+		webapp_read_pid($1, supervisord_t)
+		webapp_manage_run_files($1, supervisord_t)
+	')
+
+')
+
+########################################
+## Permission related templates
+########################################
+
+########################################
+## <summary>
+##	Web application basic permissions template.
+##	Allow the domain to perform as a basic web 
+##	application server process with necessary 
+##	minimum privileges.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_perms',`
+
+	gen_require(`
+		type webapp_$1_port_t;
+		type webapp_$1_netif_t;
+		type webapp_$1_node_t;
+		type httpd_config_t;
+	')
+
+	# Internal privileges
+	allow webapp_$1_t self:capability { kill setgid setuid sys_nice sys_tty_config };
+	# dontaudit webapp_$1_t self:capability { net_admin sys_tty_config };
+	allow webapp_$1_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execstack execheap };
+	allow webapp_$1_t self:fd use;
+	allow webapp_$1_t self:sock_file read_sock_file_perms;
+	allow webapp_$1_t self:fifo_file rw_fifo_file_perms;
+	allow webapp_$1_t self:shm create_shm_perms;
+	allow webapp_$1_t self:sem create_sem_perms;
+	allow webapp_$1_t self:msgq create_msgq_perms;
+	allow webapp_$1_t self:msg { send receive };
+	allow webapp_$1_t self:unix_dgram_socket { create_socket_perms sendto };
+	allow webapp_$1_t self:unix_stream_socket { create_stream_socket_perms connectto };
+	allow webapp_$1_t self:udp_socket create_socket_perms;
+	allow webapp_$1_t self:tcp_socket create_stream_socket_perms;
+	allow webapp_$1_t self:netlink_audit_socket { create_netlink_socket_perms nlmsg_relay };
+	
+	# Execute the dynamic link/loader in the caller domain
+	libs_exec_ld_so(webapp_$1_t)
+
+	# Use the dynamic link/loader for automatic
+	# loading of shared libraries.
+	libs_use_ld_so(webapp_$1_t)
+
+	# Execute library scripts in the caller domain
+	libs_exec_lib_files(webapp_$1_t)
+	#libs_read_lib_files(webapp_$1_t)
+
+	# Execute ldconfig in the caller domain
+	libs_exec_ldconfig(webapp_$1_t)
+
+	# Modify dynamic loader custom cache file.
+	webapp_rw_custom_ld_so_cache($1, webapp_$1_t)
+	
+	# Device nodes
+	dev_read_sysfs(webapp_$1_t)
+	dev_read_rand(webapp_$1_t)
+	dev_read_urand(webapp_$1_t)
+	dev_rw_crypto(webapp_$1_t)
+
+	# Allow the domain to read dynamically created
+	# configuration files in /etc.
+	files_read_etc_runtime_files(webapp_$1_t)
+
+	# Create web application custom etc runtime
+	# files with an automatic type transition
+	webapp_etc_filetrans_etc_runtime($1, file, webapp_$1_t)
+
+	# Get the attributes of persistent
+	# filesystems which have extended
+	# attributes, such as ext3, ext4, JFS, or XFS.
+	fs_getattr_xattr_fs(webapp_$1_t)
+	
+	# Allow the domain to read web application base content files
+	webapp_read_ro_content($1, webapp_$1_t)
+		
+	# Allow process to read localization information
+	miscfiles_read_localization(webapp_$1_t)
+
+	# Allow process to read fonts
+	miscfiles_read_fonts(webapp_$1_t)
+	
+	# Read general kernel sysctls
+	kernel_read_kernel_sysctls(webapp_$1_t)
+	
+	# Read system state information in /proc.
+	kernel_read_system_state(webapp_$1_t)
+
+	# Perform DNS name resolutions
+	sysnet_dns_name_resolve(webapp_$1_t)
+	sysnet_read_config(webapp_$1_t)
+
+	# Use NSCD services by connecting using
+	# a unix stream socket.
+	optional_policy(`
+		nscd_socket_use(webapp_$1_t)
+	')
+
+	# Make the specified type usable for temporary files
+	files_tmp_filetrans(webapp_$1_t, webapp_$1_tmp_t, { file dir })
+	webapp_manage_tmp_files($1, webapp_$1_t)
+
+	# Some web applications/frameworks requires execution permission of its tmp files
+	tunable_policy(`webapp_$1_exec_tmp',`
+		can_exec(webapp_$1_t, webapp_$1_tmp_t)
+	')
+
+	# Allow create objects in a virtual memory filesystem (tmpfs),
+	# with a private type using a type transition.
+	fs_tmpfs_filetrans(webapp_$1_t, webapp_$1_tmpfs_t, { dir file lnk_file sock_file fifo_file })
+	webapp_manage_tmpfs_files($1, webapp_$1_t)
+
+	# Make the specified type usable for runtime files
+	filetrans_pattern(webapp_$1_t, var_run_t, webapp_$1_var_run_t, { file dir sock_file fifo_file })
+	webapp_manage_run_files($1, webapp_$1_t)
+
+	# Allow the domain to read web application config files	
+	webapp_read_conf($1, webapp_$1_t)
+
+	# Allow the domain to read web application mount files	
+	webapp_read_mount($1, webapp_$1_t)
+	
+	# Allow the domain to manage web application cache
+	webapp_manage_cache($1, webapp_$1_t)
+	
+	# Allow the domain to manage web application writeable content files	
+	webapp_manage_rw_content($1, webapp_$1_t)
+	
+	# For some web apps/framworks, manage log files is required
+	webapp_manage_log($1, webapp_$1_t)
+
+	# Search apache sys content
+	optional_policy(`
+		apache_search_sys_content(webapp_$1_t)
+	')
+
+	########################################
+	## Tunable permissions
+	########################################
+
+	# Kernel
+
+	# Allow web application to read network sysctls
+	tunable_policy(`webapp_$1_read_sysctls_net',`
+		kernel_read_net_sysctls(webapp_$1_t)
+	')
+
+	# Execution
+
+	# Allow process trace
+	tunable_policy(`webapp_$1_enable_ptrace',`	
+		allow webapp_$1_t self:capability sys_ptrace;
+		allow webapp_$1_t self:process ptrace;
+	')
+
+	# Execute the web application executable
+	tunable_policy(`webapp_$1_exec_self',`
+		can_exec(webapp_$1_t, webapp_$1_exec_t)
+	')
+
+	# Execute binaries and shell scripts
+	tunable_policy(`webapp_$1_exec_bin',`	
+		corecmd_exec_bin(webapp_$1_t)
+		corecmd_exec_shell(webapp_$1_t)
+	')
+
+	# Allow web application execute hostname
+	# binary in the hostname domain
+	optional_policy(`
+		tunable_policy(`webapp_$1_exec_hostname',`
+			hostname_domtrans(webapp_$1_t)
+		')
+	')
+
+	# Allow web application execute ifconfig/ip
+	# binary in the ifconfig domain
+	optional_policy(`
+		tunable_policy(`webapp_$1_exec_ifconfig',`
+			sysnet_domtrans_ifconfig(webapp_$1_t)
+		')
+	')
+
+	# Allow web application execute mount
+	# binary in the mount domain
+	optional_policy(`
+		tunable_policy(`webapp_$1_exec_mount',`
+			mount_domtrans(webapp_$1_t)
+			# Allow mount manage custom mtab file
+			gen_require(`
+				type mount_t;
+			')
+			webapp_manage_mount($1, mount_t)
+			# Create, web application custom etc runtime
+			# files with an automatic type transition,
+			# and make the files usable as etc runtime files.
+			webapp_etc_filetrans_etc_runtime($1, file, mount_t)
+			webapp_manage_custom_etc_runtime($1, mount_t)
+		')
+	')
+
+	# Allow web application execute uwsgi binary
+	tunable_policy(`webapp_$1_exec_uwsgi',`
+		webapp_exec_uwsgi(webapp_$1_t)
+	')
+
+	# Allow run gpg
+	optional_policy(`
+		tunable_policy(`webapp_$1_enable_gpg',`
+			gpg_domtrans(webapp_$1_t)
+		')
+	')
+
+	# Files and filesystems
+
+	# Allow web application server to make
+	# arbitrary changes to file UIDs and GIDs
+	tunable_policy(`webapp_$1_enable_chown',`	
+		allow webapp_$1_t self:capability chown;
+	')
+
+	# Allow web application server to change the
+	# apparent root directory for the current
+	# running process and its children
+	tunable_policy(`webapp_$1_enable_chroot',`	
+		allow webapp_$1_t self:capability sys_chroot;
+	')
+
+	# Allow access cifs file systems
+	tunable_policy(`webapp_$1_enable_homedirs && webapp_$1_enable_cifs',`
+		fs_list_cifs(webapp_$1_t)
+		fs_read_cifs_files(webapp_$1_t)
+		fs_read_cifs_symlinks(webapp_$1_t)
+	')
+	
+	# Allow access nfs file systems
+	tunable_policy(`webapp_$1_enable_homedirs && webapp_$1_enable_nfs',`
+		fs_list_nfs(webapp_$1_t)
+		fs_read_nfs_files(webapp_$1_t)
+		fs_read_nfs_symlinks(webapp_$1_t)
+	')
+
+	# Allow read home directories
+	tunable_policy(`webapp_$1_enable_homedirs',`
+		userdom_read_user_home_content_files(webapp_$1_t)
+	')
+
+	# Allow web application to read public files
+	# used for public file transfer services.
+	# Directories/Files must
+	# be labeled public_content_rw_t.
+	tunable_policy(`webapp_$1_anon_read',`
+		miscfiles_read_public_files(webapp_$1_t)
+	')
+
+	# Allow the domain to read generic
+	# files in /etc. Allow the domain to have access 
+	# to files such as nsswitch.conf and mime.types.
+	tunable_policy(`webapp_$1_read_etc',`
+		files_read_etc_files(webapp_$1_t)
+	')
+	
+	# Networking
+
+	tunable_policy(`webapp_$1_tcp_connect',`
+		webapp_network_tcp(webapp_$1_t)
+	')
+
+	tunable_policy(`webapp_$1_tcp_listen',`
+		webapp_network_tcp(webapp_$1_t)
+		allow webapp_$1_t webapp_$1_port_t:tcp_socket name_bind;
+		allow webapp_$1_t node_t:tcp_socket node_bind;
+		allow webapp_$1_t webapp_$1_node_t:tcp_socket node_bind;
+		allow webapp_$1_t webapp_$1_port_t:tcp_socket { send_msg recv_msg };
+	')
+
+	# Allow bind to HTTP port
+	tunable_policy(`webapp_$1_bind_http_port',`
+		webapp_bind_http_port(webapp_$1_t)
+	')
+
+	# Allow web application to query NS records
+	tunable_policy(`webapp_$1_verify_dns',`
+		corenet_udp_bind_generic_port(webapp_$1_t)
+	')
+
+	# Connect to services
+	
+	# Allow connect to common databases
+	webapp_connect_db($1, webapp_$1_t)
+
+	# Allow connect to automated bug-reporting
+	# tool via a UNIX stream socket
+	optional_policy(`
+		tunable_policy(`webapp_$1_connect_abrt',`
+			abrt_stream_connect(webapp_$1_t)
+		')
+	')
+
+	# Allow connect to FTP servers	
+	tunable_policy(`webapp_$1_connect_ftp',`
+		webapp_connect_ftp(webapp_$1_t)
+	')
+
+	# Allow connect to Gopher servers	
+	tunable_policy(`webapp_$1_connect_gopher',`
+		webapp_connect_gopher(webapp_$1_t)
+	')
+
+	# Allow connect to HTTP servers	
+	tunable_policy(`webapp_$1_connect_http',`
+		webapp_connect_http(webapp_$1_t)
+	')
+
+	# Allow connect to HTTP cache servers	
+	tunable_policy(`webapp_$1_connect_http_cache',`
+		webapp_connect_http_cache(webapp_$1_t)
+	')
+
+	# Allow connect to memcache
+	tunable_policy(`webapp_$1_connect_memcache',`
+		webapp_connect_memcache(webapp_$1_t)
+	')
+
+	# Allow connect to openstack
+	tunable_policy(`webapp_$1_connect_openstack',`
+		#corenet_tcp_connect_keystone_port(webapp_$1_t)
+		corenet_tcp_connect_commplex_port(webapp_$1_t)
+		corenet_tcp_connect_glance_port(webapp_$1_t)
+	')
+
+	# Allow connect to POP/IMAP servers	
+	tunable_policy(`webapp_$1_connect_pop',`
+		webapp_connect_pop(webapp_$1_t)
+	')
+
+	# Allow connect to SMTP servers
+	tunable_policy(`webapp_$1_sendmail',`
+		webapp_sendmail(webapp_$1_t)
+	')
+
+	# Allow connect to Manage Sieve
+	tunable_policy(`webapp_$1_connect_sieve',`
+		webapp_connect_sieve(webapp_$1_t)
+	')
+
+	# Allow the specified domain to connect to the
+	# system log service (syslog), to send messages be added to
+	# the system logs. Typically this is used by services
+	# that do not have their own log file in /var/log
+	tunable_policy(`webapp_$1_connect_syslog',`
+		logging_send_syslog_msg(webapp_$1_t)
+	')
+
+	# Allow use Nagios IT infrastructure monitoring
+	optional_policy(`
+		tunable_policy(`webapp_$1_enable_nagios',`
+			nagios_read_config(webapp_$1_t)
+			nagios_read_log(webapp_$1_t)
+		')
+	')
+
+	# Allow web application to create and use tun and tap devices
+	tunable_policy(`webapp_$1_enable_tuntap',`
+		allow webapp_$1_t self:tun_socket create_socket_perms;
+		corenet_rw_tun_tap_dev(webapp_$1_t)
+	')
+
+	# Allow web applicatgion to
+	# use Zarafa collaboration software
+	optional_policy(`
+		tunable_policy(`webapp_$1_enable_zarafa',`
+			zarafa_manage_lib_files(webapp_$1_t)
+			zarafa_stream_connect_server(webapp_$1_t)
+			zarafa_search_config(webapp_$1_t)
+		')
+	')
+	
+	# Allow manage web application config files
+	tunable_policy(`webapp_$1_manage_config',`
+		webapp_manage_conf($1, webapp_$1_t)
+	')
+
+	# Allow web application to modify public files
+	# used for public file transfer services.
+	# Directories/Files must
+	# be labeled public_content_rw_t.
+	tunable_policy(`webapp_$1_anon_write',`
+		miscfiles_manage_public_files(webapp_$1_t)
+	')
+		
+	optional_policy(`
+		dbus_system_bus_client(webapp_$1_t)
+		tunable_policy(`webapp_$1_dbus_avahi',`
+			avahi_dbus_chat(webapp_$1_t)
+		')
+	')
+
+	# Allow connect to WHOIS servers
+	tunable_policy(`webapp_$1_connect_whois',`
+		webapp_connect_whois(webapp_$1_t)
+	')
+
+	# Allow webapplication to change system limits
+	tunable_policy(`webapp_$1_setrlimit',`
+		allow webapp_$1_t self:process setrlimit;
+		allow webapp_$1_t self:capability sys_resource;
+	')
+
+	# Allow web application the ability to read/write terminals
+	tunable_policy(`webapp_$1_use_tty',`
+		gen_require(`
+			type ptmx_t;		
+		')
+		term_use_all_ttys(webapp_$1_t)
+		term_use_all_ptys(webapp_$1_t)
+		allow webapp_$1_t ptmx_t:chr_file rw_file_perms;
+	',`
+		term_dontaudit_use_all_ttys(webapp_$1_t)
+		term_dontaudit_use_all_ptys(webapp_$1_t)
+		dontaudit webapp_$1_t ptmx_t:chr_file rw_file_perms;
+	')
+
+	########################################
+	## Dont audit
+	########################################
+
+	# Dont audit attempts to search the apache config directory
+	dontaudit webapp_$1_t httpd_config_t:dir search_dir_perms;
+
+	# Do not audit attempts to search the SELinux
+	# configuration directory (/etc/selinux).
+	seutil_dontaudit_search_config(webapp_$1_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to common databases.
+## </summary>
+## <param name="webapp identity">
+##	<summary>
+##	Identity of the webapp. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_db',`
+
+	# Allow connect to MySQL
+	optional_policy(`
+		# Allow connect to MySQL via a stream socket
+		mysql_stream_connect($2)
+		mysql_rw_db_sockets($2)
+		tunable_policy(`webapp_$1_tcp_connect_db',`
+			# Allow connect to MySQL via a tcp socket
+			mysql_tcp_connect($2)
+		')
+	')
+	
+	# These two lines seems to be required
+	files_read_usr_files($2)
+	files_search_var_lib($2)
+
+	# Allow connect to PostgresSQL
+	optional_policy(`
+		# Allow connect to PostgresSQL via a stream socket
+		postgresql_stream_connect($2)
+		postgresql_unpriv_client($2)
+		# Allow connect to PostgresSQL via a tcp socket
+		tunable_policy(`webapp_$1_tcp_connect_db',`
+			postgresql_tcp_connect($2)
+		')
+	')
+
+	# Allow connect to Oracle via a tcp socket
+	tunable_policy(`webapp_$1_tcp_connect_db',`
+		corenet_tcp_connect_oracle_port($2)
+		corenet_sendrecv_oracle_client_packets($2)
+	')
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	bind to HTTP port.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_bind_http_port',`
+
+	corenet_tcp_bind_http_port($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to FTP servers.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_ftp',`
+	
+	corenet_tcp_connect_ftp_port($1)
+	corenet_sendrecv_ftp_client_packets($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to Gopher servers.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access-
+##	</summary>
+## </param>
+
+template(`webapp_connect_gopher',`
+	
+	corenet_tcp_connect_gopher_port($1)
+	corenet_sendrecv_gopher_client_packets($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to HTTP servers.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_http',`
+	
+	corenet_tcp_connect_http_port($1)
+	corenet_sendrecv_http_client_packets($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to HTTP cache servers.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_http_cache',`
+	
+	corenet_tcp_connect_http_cache_port($1)
+	corenet_sendrecv_http_client_packets($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	to send mail.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_sendmail',`
+
+	# Allow connect to SMTP servers
+	corenet_tcp_connect_smtp_port($1)
+	corenet_sendrecv_smtp_client_packets($1)
+	# Send mail from the system
+	mta_send_mail($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to POP/IMAP servers.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_pop',`
+	
+	corenet_tcp_connect_pop_port($1)
+	corenet_sendrecv_pop_client_packets($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to memcached.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_memcache',`
+	
+	corenet_tcp_connect_memcache_port($1)
+	corenet_sendrecv_http_cache_client_packets($1)
+
+')
+
+########################################
+## <summary>
+##	Allow connect to Sieve port using TCP
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_sieve',`
+
+	gen_require(`
+		type sieve_port_t;
+	')
+	webapp_network_tcp($1)
+	allow $1 sieve_port_t:tcp_socket name_connect;
+
+')
+
+########################################
+## <summary>
+##	Allow connect to WHOIS port using TCP
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+template(`webapp_connect_whois',`
+
+	corenet_tcp_connect_whois_port($1)
+	corenet_sendrecv_whois_client_packets($1)
+
+')
+
+# Process related templates
+
+########################################
+## <summary>
+##      Allow dynamic process transition from
+##	source domain to target domain, and allow
+##	basic signal and file descriptor permissons.
+## </summary>
+## <param name="identity of source domain">
+##	<summary>
+##	Identity of the source web application domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t type.
+##	</summary>
+## </param>
+## <param name="identity of target domain">
+##      <summary>
+##	Identity of the target web application domain.
+##	Example, bar is the identity
+##	of the webapp_bar_t type.
+##      </summary>
+## </param>
+#
+template(`webapp_dyntrans',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type webapp_$2_t;
+	')
+
+	# Allow web application source process
+	# to set its security context.
+	allow webapp_$1_t self:process setcurrent;
+
+	# Alow process transition from
+	# source domain to target domain
+	allow webapp_$1_t webapp_$2_t:process dyntransition;
+
+	# Allow signals between source and target processes
+	allow webapp_$1_t webapp_$2_t:process { signal sigkill sigstop };
+	allow webapp_$2_t webapp_$1_t:process { signal sigchld };
+
+	# Allow the target process to use file
+	# descriptors of the source process
+	allow webapp_$2_t webapp_$1_t:fd use;
+
+')
+
+########################################
+## Interfaces
+########################################
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	execute the uwsgi executable.
+##	uwsgi is a web application server.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_exec_uwsgi',`
+
+	gen_require(`
+		type uwsgi_exec_t;
+	')
+
+	can_exec($1, uwsgi_exec_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's cache files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_cache',`
+
+	gen_require(`
+		type webapp_$1_cache_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_cache_t }, webapp_$1_cache_t)
+	read_files_pattern($2, webapp_$1_cache_t, webapp_$1_cache_t)
+	read_lnk_files_pattern($2, webapp_$1_cache_t, webapp_$1_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's cache files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_cache',`
+
+	gen_require(`
+		type webapp_$1_cache_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_cache_t }, webapp_$1_cache_t)
+	manage_files_pattern($2, webapp_$1_cache_t, webapp_$1_cache_t)
+	manage_lnk_files_pattern($2, webapp_$1_cache_t, webapp_$1_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's cache files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_cache',`
+
+	gen_require(`
+		type webapp_$1_cache_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_cache_t webapp_$1_content_t }, webapp_$1_cache_t)
+	relabelfrom_files_pattern($2, { webapp_$1_cache_t webapp_$1_content_t }, webapp_$1_cache_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_cache_t webapp_$1_content_t }, webapp_$1_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's cache files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_cache',`
+
+	gen_require(`
+		type webapp_$1_cache_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_cache_t webapp_$1_content_t }, webapp_$1_cache_t)
+	relabelto_files_pattern($2, { webapp_$1_cache_t webapp_$1_content_t }, webapp_$1_cache_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_cache_t webapp_$1_content_t }, webapp_$1_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's cache files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_cache',`
+
+	webapp_relabelfrom_cache($1, $2)
+	webapp_relabelto_cache($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_config_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_conf',`
+
+	gen_require(`
+		type webapp_$1_config_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_config_t }, webapp_$1_config_t)
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_config_t }, webapp_$1_config_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_config_t }, webapp_$1_config_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##  	the web application's configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_config_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_conf',`
+
+	gen_require(`
+		type webapp_$1_config_t;
+		type webapp_$1_content_t;
+	')
+	
+	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_config_t }, webapp_$1_config_t)
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_config_t }, webapp_$1_config_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_config_t }, webapp_$1_config_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_config_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_conf',`
+
+	gen_require(`
+		type webapp_$1_config_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_config_t webapp_$1_content_t }, webapp_$1_config_t)
+	relabelfrom_files_pattern($2, { webapp_$1_config_t webapp_$1_content_t }, webapp_$1_config_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_config_t webapp_$1_content_t }, webapp_$1_config_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_config_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_conf',`
+
+	gen_require(`
+		type webapp_$1_config_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_config_t webapp_$1_content_t }, webapp_$1_config_t)
+	relabelto_files_pattern($2, { webapp_$1_config_t webapp_$1_content_t }, webapp_$1_config_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_config_t webapp_$1_content_t }, webapp_$1_config_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to the
+##  	web application's configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_config_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_conf',`
+
+	webapp_relabelfrom_conf($1, $2)
+	webapp_relabelto_conf($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to search
+##	the web application's content directories.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the directory type.
+##	Example, foo is the identity of the 
+##	webapp_foo_content_t directory type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_search_content_dirs',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;		
+	')
+
+	search_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t httpd_sys_content_t }, webapp_$1_content_t)
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to list the
+##	web application's content directory.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the directory type. Example, 
+##	foo is the identity of the 
+##	webapp_foo_content_t directory type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.
+##	</summary>
+## </param>
+#
+interface(`webapp_list_content_dirs',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;		
+	')
+
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t httpd_sys_content_t }, webapp_$1_content_t)
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	search all web applications'
+##	content directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed search access.
+##	</summary>
+## </param>
+#
+interface(`webapp_search_all_content_dirs',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		type httpd_sys_content_t;		
+	')
+
+	search_dirs_pattern($1, { webapp_content_type httpd_sys_content_t }, webapp_content_type)
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	read the web application's
+##	read only content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_ro_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's read only content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_ro_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	manage_fifo_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	manage_sock_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##	the web application's read only content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_relabelfrom_ro_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	relabelfrom_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##	the web application's read only content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_relabelto_ro_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	relabelto_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##	the web application's read only
+##	content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_ro_content',`
+
+	webapp_relabelfrom_ro_content($1, $2)
+	webapp_relabelto_ro_content($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_rw_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_rw_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_rw_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read and write access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_rw_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	manage_fifo_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	manage_sock_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##	the web application's read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_rw_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_relabelfrom_rw_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	relabelfrom_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##	the web application's read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_rw_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_relabelto_rw_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	relabelto_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##	the web application's read write
+##	content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_rw_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_rw_content',`
+
+	webapp_relabelfrom_rw_content($1, $2)
+	webapp_relabelto_rw_content($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's static content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_static_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	webapp_read_ro_content($1, $2)
+	webapp_read_rw_content($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's read content and
+##	read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_static_content',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	webapp_manage_ro_content($1, $2)
+	webapp_manage_rw_content($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##	the web application's read content
+##	and read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_relabelfrom_static_content',`
+
+	webapp_relabelfrom_ro_content($1, $2)
+	webapp_relabelfrom_rw_content($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##	the web application's read content
+##	and read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_relabelto_static_content',`
+
+	webapp_relabelto_ro_content($1, $2)
+	webapp_relabelto_rw_content($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##	the web application's read
+##	content and read write content files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the log file type. Example, foo is the
+##	identity of the webapp_foo_content_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_static_content',`
+
+	webapp_relabelfrom_ro_content($1, $2)
+	webapp_relabelto_ro_content($1, $2)
+	webapp_relabelfrom_rw_content($1, $2)
+	webapp_relabelto_rw_content($1, $2)
+
+')
+
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the the web application's log files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the log file type. Example, foo is the
+##	identity of the webapp_foo_log_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_log',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_log_t;
+		type var_log_t;
+	')
+
+	list_dirs_pattern($2, { var_log_t webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+
+')
+
+#######################################
+## <summary>
+##	Allow the specified domain to append
+##	to the web application's log files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_log_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_append_log',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_log_t;
+		type var_log_t;
+	')
+
+
+	search_dirs_pattern($2, { var_log_t webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+	append_files_pattern($2, { webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+	append_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	manage the web application's log files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_log_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_log',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_log_t;
+		type var_log_t;
+	')
+
+	manage_dirs_pattern($2, { var_log_t webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_log_t }, webapp_$1_log_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's log files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_log_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_log',`
+
+	gen_require(`
+		type webapp_$1_log_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_log_t webapp_$1_content_t }, webapp_$1_log_t)
+	relabelfrom_files_pattern($2, { webapp_$1_log_t webapp_$1_content_t }, webapp_$1_log_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_log_t webapp_$1_content_t }, webapp_$1_log_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's log files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_log_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_log',`
+
+	gen_require(`
+		type webapp_$1_log_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_log_t webapp_$1_content_t }, webapp_$1_log_t)
+	relabelto_files_pattern($2, { webapp_$1_log_t webapp_$1_content_t }, webapp_$1_log_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_log_t webapp_$1_content_t }, webapp_$1_log_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's log files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_log_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_log',`
+
+	webapp_relabelfrom_log($1, $2)
+	webapp_relabelto_log($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's mount files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_mount_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_mount',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_mount_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_mount_t }, webapp_$1_mount_t)
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_mount_t }, webapp_$1_mount_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_mount_t }, webapp_$1_mount_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	manage the web application's mount files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_mount_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_mount',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_mount_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_mount_t }, webapp_$1_mount_t)
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_mount_t }, webapp_$1_mount_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_mount_t }, webapp_$1_mount_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's mount files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_mount_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_mount',`
+
+	gen_require(`
+		type webapp_$1_mount_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_mount_t webapp_$1_content_t }, webapp_$1_mount_t)
+	relabelfrom_files_pattern($2, { webapp_$1_mount_t webapp_$1_content_t }, webapp_$1_mount_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_mount_t webapp_$1_content_t }, webapp_$1_mount_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's mount files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_mount_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_mount',`
+
+	gen_require(`
+		type webapp_$1_mount_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_mount_t webapp_$1_content_t }, webapp_$1_mount_t)
+	relabelto_files_pattern($2, { webapp_$1_mount_t webapp_$1_content_t }, webapp_$1_mount_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_mount_t webapp_$1_content_t }, webapp_$1_mount_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's mount files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_mount_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_mount',`
+
+	webapp_relabelfrom_mount($1, $2)
+	webapp_relabelto_mount($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's executable.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_exec_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_exec',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_exec_t;
+	')
+
+	list_dirs_pattern($2, webapp_$1_content_t, webapp_$1_exec_t)
+	read_files_pattern($2, webapp_$1_content_t, webapp_$1_exec_t)
+	read_lnk_files_pattern($2, webapp_$1_content_t, webapp_$1_exec_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to 
+##	manage the web application's executable.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_exec_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_exec',`
+
+	gen_require(`
+		type webapp_$1_content_t;
+		type webapp_$1_exec_t;
+	')
+
+	manage_dirs_pattern($2, webapp_$1_content_t, webapp_$1_exec_t)
+	manage_files_pattern($2, webapp_$1_content_t, webapp_$1_exec_t)
+	manage_lnk_files_pattern($2, webapp_$1_content_t, webapp_$1_exec_t)
+
+')
+
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's executable.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_exec_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_exec',`
+
+	gen_require(`
+		type webapp_$1_exec_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_exec_t webapp_$1_content_t }, webapp_$1_exec_t)
+	relabelfrom_files_pattern($2, { webapp_$1_exec_t webapp_$1_content_t }, webapp_$1_exec_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_exec_t webapp_$1_content_t }, webapp_$1_exec_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's executable.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_exec_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_exec',`
+
+	gen_require(`
+		type webapp_$1_exec_t;
+		type webapp_$1_content_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_exec_t webapp_$1_content_t }, webapp_$1_exec_t)
+	relabelto_files_pattern($2, { webapp_$1_exec_t webapp_$1_content_t }, webapp_$1_exec_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_exec_t webapp_$1_content_t }, webapp_$1_exec_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's executable.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_exec_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_exec',`
+
+	webapp_relabelfrom_exec($1, $2)
+	webapp_relabelto_exec($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's custom etc files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_etc_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_etc',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_mount_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_mount_t }, webapp_$1_etc_t)
+	read_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+	read_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's custom etc files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_etc_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_custom_etc',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_mount_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_mount_t }, webapp_$1_etc_t)
+	manage_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+	manage_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's custom etc files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_etc_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_custom_etc',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_mount_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_mount_t }, webapp_$1_etc_t)
+	relabelfrom_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+	relabelfrom_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's custom etc files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_etc_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_custom_etc',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_mount_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_mount_t }, webapp_$1_etc_t)
+	relabelto_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+	relabelto_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's custom etc files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_etc_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_custom_etc',`
+
+	webapp_relabelfrom_custom_etc($1, $2)
+	webapp_relabelto_custom_etc($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's custom etc runtime files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example,
+##	foo is the identity of the 
+##	webapp_foo_etc_runtime_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_etc_runtime',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_etc_runtime_t;
+	')
+
+	read_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+	read_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	manage the web application's custom
+##	etc runtime files that are 
+##	automatically created, such as mtab.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example,
+##	foo is the identity of the 
+##	webapp_foo_etc_runtime_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_custom_etc_runtime',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_etc_runtime_t;
+	')
+
+	manage_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+	manage_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+
+')
+
+########################################
+## <summary>
+##      Create web application's custom etc runtime
+##	objects with an automatic type transition.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example,
+##	foo is the identity of the 
+##	webapp_foo_etc_runtime_t type.
+##	</summary>
+## </param>
+## <param name="object">
+##      <summary>
+##      The class of the object being created.
+##      </summary>
+## </param>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`webapp_etc_filetrans_etc_runtime',`
+        gen_require(`
+                type webapp_$1_etc_t;
+		type webapp_$1_etc_runtime_t;
+        ')
+
+        filetrans_pattern($3, webapp_$1_etc_t, webapp_$1_etc_runtime_t, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's custom etc runtime files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_etc_runtime_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_custom_etc_runtime',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_etc_runtime_t;
+	')
+
+	relabelfrom_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+	relabelfrom_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's custom etc runtime files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_etc_runtime_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_custom_etc_runtime',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_etc_runtime_t;
+	')
+
+	relabelto_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+	relabelto_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_etc_runtime_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's custom etc runtime files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_etc_runtime_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_custom_etc_runtime',`
+
+	webapp_relabelfrom_custom_etc_runtime($1, $2)
+	webapp_relabelto_custom_etc_runtime($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	read the web application's custom
+##	network configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_net_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_net_conf',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_net_conf_t;
+	')
+
+	list_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+	read_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
+	read_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	manage the web application's custom
+##	network configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_net_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_custom_net_conf',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_net_conf_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
+	manage_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
+	manage_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's custom network
+##	configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_net_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_custom_net_conf',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_net_conf_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+	relabelfrom_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's custom network
+##	configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_net_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_custom_net_conf',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_net_conf_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+	relabelto_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's custom
+##	network configuration files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_net_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_custom_net_conf',`
+
+	webapp_relabelfrom_custom_net_conf($1, $2)
+	webapp_relabelto_custom_net_conf($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	to read the web application's
+##	dynamic loader custom cache file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_ld_so_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_ld_so_cache',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_ld_so_cache_t;
+	')
+
+	read_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+	read_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	to modify the web application's
+##	dynamic loader custom cache file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_ld_so_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`webapp_rw_custom_ld_so_cache',`
+        gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_ld_so_cache_t;
+        ')
+
+	list_dirs_pattern($2, webapp_$1_mount_t, webapp_$1_etc_t)
+        allow $2 webapp_$1_ld_so_cache_t:file rw_file_perms;
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	to manage the web application's
+##	dynamic loader custom cache file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type.
+##	Example, foo is the identity
+##	for the webapp_foo_ld_so_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_custom_ld_so_cache',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_ld_so_cache_t;
+	')
+
+	manage_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+	manage_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	from the web application's custom
+##	dynamic loader cache file. 
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_ld_so_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_custom_ld_so_cache',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_ld_so_cache_t;
+	')
+
+	relabelfrom_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+	relabelfrom_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	to the web application's custom
+##	dynamic loader cache file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_ld_so_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_custom_ld_so_cache',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_ld_so_cache_t;
+	')
+
+	relabelto_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+	relabelto_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_ld_so_cache_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	from and relabel to the web 
+##	application's custom dynamic 
+##	loader cache file. 
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_ld_so_cache_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_custom_ld_so_cache',`
+
+	webapp_relabelfrom_custom_ld_so_cache($1, $2)
+	webapp_relabelto_custom_ld_so_cache($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's custom PHP ini files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_php_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_php_ini',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_php_conf_t;
+	')
+
+	list_dirs_pattern($2, webapp_$1_etc_t, webapp_$1_php_conf_t)
+	read_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	read_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's custom PHP ini files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_exec_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_custom_php_ini',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_php_conf_t;
+	')
+
+	manage_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	manage_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	manage_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's custom PHP ini files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_custom_php_ini',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_php_conf_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	relabelfrom_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's custom PHP ini files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_custom_php_ini',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_php_conf_t;
+	')
+
+	relabelto_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	relabelto_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's custom
+##	php ini files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_conf_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_custom_php_ini',`
+
+	webapp_relabelfrom_custom_php_ini($1, $2)
+	webapp_relabelto_custom_php_ini($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's pid file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_var_run_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_pid',`
+
+	gen_require(`
+		type var_run_t;		
+		type webapp_$1_var_run_t;
+	')
+
+	list_dirs_pattern($2, var_run_t, webapp_$1_var_run_t)
+	read_files_pattern($2, webapp_$1_var_run_t, webapp_$1_var_run_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's run files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_var_run_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_run_files',`
+	gen_require(`
+		type var_run_t;
+		type webapp_$1_var_run_t;
+	')
+
+	setattr_dirs_pattern($2, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+	manage_dirs_pattern($2, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+	manage_files_pattern($2, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+	manage_lnk_files_pattern($2, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+	manage_fifo_files_pattern($2, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+	manage_sock_files_pattern($2, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	all web applications' run files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_all_run_files',`
+	gen_require(`
+		type var_run_t;
+		attribute webapp_var_run_type;
+	')
+
+	setattr_dirs_pattern($1, { var_run_t webapp_var_run_type }, webapp_var_run_type)
+	manage_dirs_pattern($1, { var_run_t webapp_var_run_type }, webapp_var_run_type)
+	manage_files_pattern($1, { var_run_t webapp_var_run_type }, webapp_var_run_type)
+	manage_lnk_files_pattern($1, { var_run_t webapp_var_run_type }, webapp_var_run_type)
+	manage_fifo_files_pattern($1, { var_run_t webapp_var_run_type }, webapp_var_run_type)
+	manage_sock_files_pattern($1, { var_run_t webapp_var_run_type }, webapp_var_run_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain read the
+##	web application's Perl script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_pl_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_read_pl_scripts',`
+
+	gen_require(`
+		type webapp_$1_pl_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_pl_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage the
+##	web application's Perl script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_pl_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_pl_scripts',`
+
+	gen_require(`
+		type webapp_$1_pl_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_pl_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's Perl script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_pl_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_pl_scripts',`
+
+	gen_require(`
+		type webapp_$1_pl_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's Perl script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_pl_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_pl_scripts',`
+
+	gen_require(`
+		type webapp_$1_pl_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_pl_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's Perl script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_pl_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_pl_scripts',`
+
+	webapp_relabelfrom_pl_scripts($1, $2)
+	webapp_relabelto_pl_scripts($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain read the
+##	web application's PHP script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_read_php_scripts',`
+
+	gen_require(`
+		type webapp_$1_php_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_php_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage the
+##	web application's PHP script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_php_scripts',`
+
+	gen_require(`
+		type webapp_$1_php_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_php_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's PHP script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_php_scripts',`
+
+	gen_require(`
+		type webapp_$1_php_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's PHP script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_php_scripts',`
+
+	gen_require(`
+		type webapp_$1_php_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_php_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to the
+##  	web application's PHP script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_php_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_php_scripts',`
+
+	webapp_relabelfrom_php_scripts($1, $2)
+	webapp_relabelto_php_scripts($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain read the
+##	web application's Python script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_py_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_read_py_scripts',`
+
+	gen_require(`
+		type webapp_$1_py_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_py_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage the
+##	web application's Python script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_py_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_py_scripts',`
+
+	gen_require(`
+		type webapp_$1_py_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_py_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's Python script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_py_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_py_scripts',`
+
+	gen_require(`
+		type webapp_$1_py_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's Python script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_py_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_py_scripts',`
+
+	gen_require(`
+		type webapp_$1_py_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_py_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's Python
+##	script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_py_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_py_scripts',`
+
+	webapp_relabelfrom_py_scripts($1, $2)
+	webapp_relabelto_py_scripts($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain read the
+##	web application's Ryby script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the type. Example, foo is
+##	the identity of the webapp_foo_rb_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_read_rb_scripts',`
+
+	gen_require(`
+		type webapp_$1_rb_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_rb_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage the
+##	web application's Ruby script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the type. Example, foo is
+##	the identity of the webapp_foo_rb_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_rb_scripts',`
+
+	gen_require(`
+		type webapp_$1_rb_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_rb_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's Ruby script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_rb_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_rb_scripts',`
+
+	gen_require(`
+		type webapp_$1_rb_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's Ruby script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_rb_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_rb_scripts',`
+
+	gen_require(`
+		type webapp_$1_rb_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rb_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to the
+##  	web application's Ruby script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_rb_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_rb_scripts',`
+
+	webapp_relabelfrom_rb_scripts($1, $2)
+	webapp_relabelto_rb_scripts($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain read
+##	all web applications' all script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_read_all_scripts',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		attribute webapp_script_type;
+		type httpd_sys_content_t;		
+	')
+
+	# No directories are labeled with webapp_script_type
+	search_dirs_pattern($1, { webapp_content_type httpd_sys_content_t }, webapp_content_type)
+	read_files_pattern($1, webapp_content_type, webapp_script_type)
+	read_lnk_files_pattern($1, webapp_content_type, webapp_script_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage
+##	all web applications' script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_all_scripts',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		attribute webapp_script_type;
+		type httpd_sys_content_t;		
+	')
+
+	# No directories are labeled with webapp_script_type
+	search_dirs_pattern($1, { webapp_content_type httpd_sys_content_t }, webapp_content_type)
+	manage_files_pattern($1, webapp_content_type, webapp_script_type)
+	manage_lnk_files_pattern($1, webapp_content_type, webapp_script_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	all web applications' script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_all_scripts',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		attribute webapp_script_type;
+		type httpd_sys_content_t;		
+	')
+
+	# No directories are labeled with webapp_script_type
+	relabelfrom_files_pattern($1, webapp_content_type, webapp_script_type)
+	relabelfrom_lnk_files_pattern($1, webapp_content_type, webapp_script_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	all web applications' script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_all_scripts',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		attribute webapp_script_type;
+		type httpd_sys_content_t;		
+	')
+
+	# No directories are labeled with webapp_script_type
+	relabelto_files_pattern($1, webapp_content_type, webapp_script_type)
+	relabelto_lnk_files_pattern($1, webapp_content_type, webapp_script_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to all
+##  	web applications' script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_all_scripts',`
+
+	webapp_relabelfrom_all_scripts($1)
+	webapp_relabelto_all_scripts($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage
+##	the web application's tmp files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmp_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_manage_tmp_files',`
+	gen_require(`
+		type webapp_$1_tmp_t;
+		type tmp_t;
+	')
+
+	manage_dirs_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	manage_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	manage_lnk_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	manage_fifo_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	manage_sock_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's tmp files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmp_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_tmp',`
+
+	gen_require(`
+		type webapp_$1_tmp_t;
+		type tmp_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelfrom_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelfrom_lnk_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelfrom_fifo_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelfrom_sock_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's tmp files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmp_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_tmp',`
+
+	gen_require(`
+		type webapp_$1_tmp_t;
+		type tmp_t;
+	')
+
+	relabelto_dirs_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelto_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelto_lnk_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelto_fifo_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+	relabelto_sock_files_pattern($2, { tmp_t webapp_$1_tmp_t }, webapp_$1_tmp_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's tmp files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmp_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_tmp',`
+
+	webapp_relabelfrom_tmp($1, $2)
+	webapp_relabelto_tmp($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage
+##	the web application's tmpfs files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmpfs_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_manage_tmpfs_files',`
+	gen_require(`
+		type webapp_$1_tmpfs_t;
+		type tmpfs_t;
+	')
+
+	# Get the attributes of a tmpfs filesystem
+	fs_getattr_tmpfs(webapp_$1_t)
+	search_dirs_pattern(webapp_$1_t, { tmpfs_t webapp_$1_tmpfs_t }, { tmpfs_t webapp_$1_tmpfs_t })	
+	manage_dirs_pattern(webapp_$1_t, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	manage_files_pattern(webapp_$1_t, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	manage_fifo_files_pattern(webapp_$1_t, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	manage_lnk_files_pattern(webapp_$1_t, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	manage_sock_files_pattern(webapp_$1_t, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's tmpfs files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmpfs_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_tmpfs',`
+
+	gen_require(`
+		type webapp_$1_tmpfs_t;
+		type tmpfs_t;
+	')
+
+	relabelfrom_dirs_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelfrom_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelfrom_lnk_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelfrom_fifo_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelfrom_sock_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's tmpfs files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmpfs_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_tmpfs',`
+
+	gen_require(`
+		type webapp_$1_tmpfs_t;
+		type tmpfs_t;
+	')
+
+	relabelto_dirs_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelto_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelto_lnk_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelto_fifo_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+	relabelto_sock_files_pattern($2, { tmpfs_t webapp_$1_tmpfs_t }, webapp_$1_tmpfs_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's tmpfs files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_tmpfs_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_tmpfs',`
+
+	webapp_relabelfrom_tmpfs($1, $2)
+	webapp_relabelto_tmpfs($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage
+##	the web application's all files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_manage_files',`
+
+	gen_require(`
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	manage_dirs_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	manage_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	manage_fifo_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	manage_lnk_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	manage_sock_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	from the web application's all files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_files',`
+
+	gen_require(`
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	relabelfrom_dirs_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelfrom_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelfrom_fifo_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelfrom_lnk_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelfrom_sock_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	to the web application's all files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_files',`
+
+	gen_require(`
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	relabelto_dirs_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelto_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelto_fifo_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelto_lnk_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+	relabelto_sock_files_pattern($2, webapp_$1_file_type, webapp_$1_file_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's all files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_files',`
+
+	webapp_relabelfrom_files($1, $2)
+	webapp_relabelto_files($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage
+##	all web applications' all files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_manage_all_files',`
+
+	gen_require(`
+		attribute webapp_file_type;
+	')
+
+	manage_dirs_pattern($1, webapp_file_type, webapp_file_type)
+	manage_files_pattern($1, webapp_file_type, webapp_file_type)
+	manage_fifo_files_pattern($1, webapp_file_type, webapp_file_type)
+	manage_lnk_files_pattern($1, webapp_file_type, webapp_file_type)
+	manage_sock_files_pattern($1, webapp_file_type, webapp_file_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	from all web applications' all files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_all_files',`
+
+	gen_require(`
+		attribute webapp_file_type;
+	')
+
+	relabelfrom_dirs_pattern($1, webapp_file_type, webapp_file_type)
+	relabelfrom_files_pattern($1, webapp_file_type, webapp_file_type)
+	relabelfrom_fifo_files_pattern($1, webapp_file_type, webapp_file_type)
+	relabelfrom_lnk_files_pattern($1, webapp_file_type, webapp_file_type)
+	relabelfrom_sock_files_pattern($1, webapp_file_type, webapp_file_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel
+##	to all web applications' all files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_all_files',`
+
+	gen_require(`
+		attribute webapp_file_type;
+	')
+
+	relabelto_dirs_pattern($1, webapp_file_type, webapp_file_type)
+	relabelto_files_pattern($1, webapp_file_type, webapp_file_type)
+	relabelto_fifo_files_pattern($1, webapp_file_type, webapp_file_type)
+	relabelto_lnk_files_pattern($1, webapp_file_type, webapp_file_type)
+	relabelto_sock_files_pattern($1, webapp_file_type, webapp_file_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	all web applications' all files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_all_files',`
+
+	webapp_relabelfrom_all_files($1)
+	webapp_relabelto_all_files($1)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	networking using TCP.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_network_tcp',`
+	
+	corenet_all_recvfrom_unlabeled($1)
+	corenet_all_recvfrom_netlabel($1)
+	corenet_tcp_sendrecv_generic_if($1)
+	corenet_tcp_sendrecv_generic_node($1)
+	corenet_tcp_sendrecv_all_ports($1)
+	#corenet_sendrecv_all_client_packets($1)
+	
+')
+
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	make a connection to the web
+##	application's port with TCP.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the port type.
+##	Example, foo is the identity
+##	of the webapp_foo_port_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_name_connect',`
+
+	gen_require(`
+		type webapp_$1_port_t;
+	')
+
+	allow $2 webapp_$1_port_t:tcp_socket name_connect;
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain send
+##	the web application's client packets.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the packet type.
+##	Example, foo is the identity of
+##	the webapp_foo_client_packet_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_send_client_packets',`
+
+	gen_require(`
+		type webapp_$1_client_packet_t;
+	')
+
+	allow $2 webapp_$1_client_packet_t:packet send;
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain receive
+##	the web application's client packets.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the packet type.
+##	Example, foo is the identity of
+##	the webapp_foo_client_packet_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_receive_client_packets',`
+
+	gen_require(`
+		type webapp_$1_client_packet_t;
+	')
+
+	allow $2 webapp_$1_client_packet_t:packet recv;
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##      send and receive the web
+##	application's client packets.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of the packet type.
+##	Example, foo is the identity of
+##	the webapp_foo_client_packet_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`webapp_sendrecv_client_packets',`
+
+        webapp_send_client_packets($1, $2)
+        webapp_receive_client_packets($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	connect to the web application.
+##      using a UNIX domain stream socket.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the socket type.
+##	Example, foo is the identity
+##	of the webapp_foo_var_run_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`webapp_stream_connect_to',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type webapp_$1_var_run_t;
+	')
+
+	files_search_pids($2)
+	stream_connect_pattern($2, webapp_$1_var_run_t, webapp_$1_var_run_t, webapp_$1_t)
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	tcp connect to the web application.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_tcp_connect_to',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type webapp_$1_netif_t;
+		type webapp_$1_node_t;
+	')
+	
+	webapp_name_connect($1, $2)
+	webapp_sendrecv_client_packets($1, $2)
+	allow $2 webapp_$1_netif_t:netif ingress;
+	allow $2 webapp_$1_node_t:node { tcp_send tcp_recv sendto recvfrom };
+	corenet_tcp_recvfrom_labeled($2, webapp_$1_t)
+
+')
+
+########################################
+## <summary>
+##      Allow the specified domain administration
+##	privileges of the web application.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the web application.
+##	Example, foo is the identity
+##	of the webapp_foo_t domain.
+##	</summary>
+## </param>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+## <param name="role">
+##      <summary>
+##      The role to be allowed to manage the
+##	web application.
+##      </summary>
+## </param>
+## <rolecap/>
+
+#
+interface(`webapp_adm',`
+
+	webapp_manage_files($1, $2)
+	webapp_stream_connect_to($1, $2)
+	webapp_tcp_connect_to($1, $2)
+')
+
+
