@@ -4,7 +4,7 @@ This is a flexible SELinux security policy for web applications. With a few line
 
 ##How to
 
-Each web application in dependent on a identity and a template. The identity is a keyword used to name the domain and its objects.
+Each web application in identified with an identity and created with a template. The identity is a keyword used to name the domain and its objects.
 
 To define a web application with identity *cms*, add the line below to you webapp.te file:
 
