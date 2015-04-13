@@ -53,27 +53,27 @@ Below is the output of *ps axZ|grep uwsgi* on a CentOS 6.6 box, running some web
 
 ```
 ps axZ|grep uwsgi
-system_u:system_r:webapp_uwsgi_t:s0-s15:c0.c1023 3295 ? S   0:17 /usr/local/sbin/uwsgi --dlopen /lib64/libselinux.so.1 --pidfile /var/run/uwsgi/uwsgi-uwsgi.pid --daemonize /var/log/uwsgi/uwsgi/uwsgi-uwsgi.log --ini /usr/local/etc/uwsgi/uwsgi.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3311 ? S   0:12 /usr/local/sbin/uwsgi --ini wsgi.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3312 ? S   0:12 /usr/local/sbin/uwsgi --ini rack.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3316 ? S   0:12 /usr/local/sbin/uwsgi --ini php.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3317 ? S   0:14 /usr/local/sbin/uwsgi --ini rack.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3318 ? S   0:14 /usr/local/sbin/uwsgi --ini wsgi.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3319 ? S   0:15 /usr/local/sbin/uwsgi --ini php.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3320 ? S   0:12 /usr/local/sbin/uwsgi --ini psgi.ini
-system_u:system_r:webapp_emperor_t:s0-s15:c0.c1023 3321 ? S   0:10 /usr/local/sbin/uwsgi --ini psgi.ini
-system_u:system_r:webapp_sevhost_t:s0-s15:c0.c1023 3323 ? S   0:30 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
-system_u:system_r:webapp_sussiep_t:s0-s15:c0.c1023 3324 ? S   0:58 /usr/local/sbin/uwsgi --ini sussiep.oribium.net.ini
-system_u:system_r:webapp_family_t:s0-s15:c0.c1023 3327 ? Sl   0:22 /usr/local/sbin/uwsgi --ini slakt.oribium.net.ini
-system_u:system_r:webapp_ponpshop_t:s0-s15:c0.c1023 3328 ? S  0:59 /usr/local/sbin/uwsgi --ini prestashop.pontuswahlgren.se.ini
-system_u:system_r:webapp_sussiep_t:s0-s15:c0.c1023 3587 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sussiep.oribium.net.ini
-system_u:system_r:webapp_sussiep_t:s0-s15:c0.c1023 3588 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sussiep.oribium.net.ini
-system_u:system_r:webapp_family_t:s0-s15:c0.c1023 3604 ? S    0:00 /usr/local/sbin/uwsgi --ini slakt.oribium.net.ini
-system_u:system_r:webapp_family_t:s0-s15:c0.c1023 3605 ? S    0:00 /usr/local/sbin/uwsgi --ini slakt.oribium.net.ini
-system_u:system_r:webapp_ponpshop_t:s0-s15:c0.c1023 3615 ? S  0:00 /usr/local/sbin/uwsgi --ini prestashop.pontuswahlgren.se.ini
-system_u:system_r:webapp_ponpshop_t:s0-s15:c0.c1023 3616 ? S  0:00 /usr/local/sbin/uwsgi --ini prestashop.pontuswahlgren.se.ini
-system_u:system_r:webapp_sevhost_t:s0-s15:c0.c1023 3641 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
-system_u:system_r:webapp_sevhost_t:s0-s15:c0.c1023 3642 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
+system_u:system_r:webapp_uwsgi_t:s0:c0.c1023 3295 ? S   0:17 /usr/local/sbin/uwsgi --dlopen /lib64/libselinux.so.1 --pidfile /var/run/uwsgi/uwsgi-uwsgi.pid --daemonize /var/log/uwsgi/uwsgi/uwsgi-uwsgi.log --ini /usr/local/etc/uwsgi/uwsgi.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3311 ? S   0:12 /usr/local/sbin/uwsgi --ini wsgi.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3312 ? S   0:12 /usr/local/sbin/uwsgi --ini rack.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3316 ? S   0:12 /usr/local/sbin/uwsgi --ini php.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3317 ? S   0:14 /usr/local/sbin/uwsgi --ini rack.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3318 ? S   0:14 /usr/local/sbin/uwsgi --ini wsgi.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3319 ? S   0:15 /usr/local/sbin/uwsgi --ini php.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3320 ? S   0:12 /usr/local/sbin/uwsgi --ini psgi.ini
+system_u:system_r:webapp_emperor_t:s0:c0.c1023 3321 ? S   0:10 /usr/local/sbin/uwsgi --ini psgi.ini
+system_u:system_r:webapp_sevhost_t:s0:c0.c1023 3323 ? S   0:30 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
+system_u:system_r:webapp_sussiep_t:s0:c0.c1023 3324 ? S   0:58 /usr/local/sbin/uwsgi --ini sussiep.oribium.net.ini
+system_u:system_r:webapp_family_t:s0:c0.c1023 3327 ? Sl   0:22 /usr/local/sbin/uwsgi --ini slakt.oribium.net.ini
+system_u:system_r:webapp_ponpshop_t:s0:c0.c1023 3328 ? S  0:59 /usr/local/sbin/uwsgi --ini prestashop.pontuswahlgren.se.ini
+system_u:system_r:webapp_sussiep_t:s0:c0.c1023 3587 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sussiep.oribium.net.ini
+system_u:system_r:webapp_sussiep_t:s0:c0.c1023 3588 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sussiep.oribium.net.ini
+system_u:system_r:webapp_family_t:s0:c0.c1023 3604 ? S    0:00 /usr/local/sbin/uwsgi --ini slakt.oribium.net.ini
+system_u:system_r:webapp_family_t:s0:c0.c1023 3605 ? S    0:00 /usr/local/sbin/uwsgi --ini slakt.oribium.net.ini
+system_u:system_r:webapp_ponpshop_t:s0:c0.c1023 3615 ? S  0:00 /usr/local/sbin/uwsgi --ini prestashop.pontuswahlgren.se.ini
+system_u:system_r:webapp_ponpshop_t:s0:c0.c1023 3616 ? S  0:00 /usr/local/sbin/uwsgi --ini prestashop.pontuswahlgren.se.ini
+system_u:system_r:webapp_sevhost_t:s0:c0.c1023 3641 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
+system_u:system_r:webapp_sevhost_t:s0:c0.c1023 3642 ? Sl  0:00 /usr/local/sbin/uwsgi --ini sevhost.oribium.net.ini
 ```
 
 For a full list of templates and interfaces, see [templates and interfaces documentation](http://www.oribium.net/services_webapp/ "Templates and Interfaces Documentation").
@@ -139,6 +139,7 @@ For each web application the following tunables are defined:
 
 * webapp_id_anon_read
 * webapp_id_anon_write
+* webapp_id_auth_pam
 * webapp_id_auth_use_nsswitch
 * webapp_id_bind_http_port
 * webapp_id_connect_abrt
@@ -178,9 +179,12 @@ For each web application the following tunables are defined:
 * webapp_id_manage_config
 * webapp_id_mod_auth_pam
 * webapp_id_read_etc
+* webapp_id_read_passwd_file
 * webapp_id_read_sysctls_net
 * webapp_id_sendmail
+* webapp_id_setgid
 * webapp_id_setrlimit
+* webapp_id_setuid
 * webapp_id_tcp_connect
 * webapp_id_tcp_connect_db
 * webapp_id_tcp_listen
@@ -228,7 +232,7 @@ This is an example of a Joomla 3 web application and the uwsgi application serve
 
 ##Development
 
-This policy was developed on a CentOS 6 box, with the MLS policy. With some minor tweaks you may get it work on other Linux distros as well. 
+This policy was developed on a CentOS 6 box, but since version 1.3.0 it is merged to CentOS 7. With some minor tweaks you may get it work on other Linux distros as well. 
 
 ##Feedback
 

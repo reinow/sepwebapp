@@ -1,10 +1,10 @@
-policy_module(webapp, 1.1.8)
+policy_module(webapp, 1.3.0)
 
 # ------------------------------------------
 # Webapp security policy module
 # ------------------------------------------
 
-## Copyright (c) 2013, 2014 Reino Wallin
+## Copyright (c) 2013, 2014, 2015 Reino Wallin
 
 ## <summary>SELinux policy module for web applications</summary>
 ## Author: Reino Wallin
@@ -67,6 +67,17 @@ attribute webapp_net_conf_type;
 
 # Attribute for web application mount files
 attribute webapp_mount_type;
+
+# Attribute for all web application client packets
+attribute webapp_client_packet_type;
+
+# Attribute for all web application server packets
+attribute webapp_server_packet_type;
+
+# Attribute for web application password files
+# In the case Linux fs namespace is used to
+# bind mount a custom etc directory
+attribute webapp_passwd_file_type;
 
 # Attribute for web application php ini files
 # In the case Linux fs namespace is used to

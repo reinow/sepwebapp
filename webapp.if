@@ -1,5 +1,5 @@
 ## SELinux policy module for web applications
-## Copyright (c) 2013, 2014 Reino Wallin
+## Copyright (c) 2013, 2014, 2015 Reino Wallin
 
 ## <summary>SELinux policy module for web applications</summary>
 ## Author: Reino Wallin
@@ -39,7 +39,6 @@ template(`webapp_base',`
 	webapp_tunables($1)
 	webapp_define_attributes($1)
 	webapp_types($1)
-	webapp_assign_attributes($1)
 	webapp_perms($1)	
 ')
 
@@ -69,14 +68,14 @@ template(`webapp_tunables',`
         ## </tunable>
 	gen_tunable(webapp_$1_anon_read, false)
 
-        ## <tunable name="webapp_id_mod_auth_pam" dftval="false">
+        ## <tunable name="webapp_id_auth_pam" dftval="false">
 	## <desc>
 	## <p>
-	## Allow web application to use mod_auth_pam.
+	## Allow authentication with PAM.
 	## </p>
 	## </desc>
         ## </tunable>
-	gen_tunable(webapp_$1_mod_auth_pam, false)
+	gen_tunable(webapp_$1_auth_pam, false)
 
         ## <tunable name="webapp_id_read_sysctls_net dftval="false">
 	## <desc>
@@ -192,6 +191,15 @@ template(`webapp_tunables',`
 	## </desc>
 	## </tunable>
 	gen_tunable(webapp_$1_exec_mount, false)
+
+	## <tunable name="webapp_id_exec_ping dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application execute ping in the ping domain.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_exec_ping, false)
 
 	## <tunable name="webapp_id_exec_self dftval="false">
 	## <desc>
@@ -410,6 +418,24 @@ template(`webapp_tunables',`
 	## </tunable>
 	gen_tunable(webapp_$1_enable_nagios, false)
 
+	## <tunable name="webapp_id_setgid dftval="false">
+	## <desc>
+	## <p>
+	## Allow set the effective group ID of the current process.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_setgid, false)
+
+	## <tunable name="webapp_id_setuid dftval="false">
+	## <desc>
+	## <p>
+	## Allow set the effective user ID of the current process.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_setuid, false)
+
 	## <tunable name="webapp_id_enable_tuntap dftval="false">
 	## <desc>
 	## <p>
@@ -456,6 +482,16 @@ template(`webapp_tunables',`
 	## </desc>
 	## </tunable>
 	gen_tunable(webapp_$1_auth_use_nsswitch, false)
+
+	## <tunable name="webapp_id_read_passwd_file dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application read the passwd
+	## passwords file (/etc/passwd).
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_read_passwd_file, false)
 
 	## <tunable name="webapp_id_connect_pop dftval="false">
 	## <desc>
@@ -511,6 +547,24 @@ template(`webapp_tunables',`
 	## </tunable>
 	gen_tunable(webapp_$1_setrlimit, false)
 
+	## <tunable name="webapp_id_sys_nice dftval="false">
+	## <desc>
+	## <p>
+	## Allow webapplication to change its base priority
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_sys_nice, false)
+
+	## <tunable name="webapp_id_sys_tty_config dftval="false">
+	## <desc>
+	## <p>
+	# Allow employ various privileged ioctl operations on virtual terminals
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_sys_tty_config, false)
+
 	## <tunable name="webapp_id_enable_zarafa dftval="false">
 	## <desc>
 	## <p>
@@ -565,6 +619,7 @@ template(`webapp_types',`
 		attribute webapp_cache_type;
 		attribute webapp_config_type;	
 		attribute webapp_content_type;
+		attribute webapp_domain;
 		attribute webapp_etc_type;
 		attribute webapp_etc_runtime_type;
 		attribute webapp_exec_type;
@@ -577,10 +632,15 @@ template(`webapp_types',`
 		attribute webapp_$1_file_type;
 		attribute webapp_netif_type;
 		attribute webapp_node_type;
+		attribute client_packet_type;
+		attribute server_packet_type;
+		attribute packet_type;
+		attribute webapp_client_packet_type;
+		attribute webapp_server_packet_type;
 	')
 
 	# Domain type
-	type webapp_$1_t;
+	type webapp_$1_t, webapp_domain;
 	domain_type(webapp_$1_t);
 	role system_r types webapp_$1_t;
 
@@ -589,13 +649,8 @@ template(`webapp_types',`
 	corenet_port(webapp_$1_port_t)
 
 	# Packet types
-	gen_require(`
-		attribute client_packet_type;
-		attribute server_packet_type;
-		attribute packet_type;
-	')
-	type webapp_$1_client_packet_t, packet_type, client_packet_type;
-	type webapp_$1_server_packet_t, packet_type, server_packet_type;
+	type webapp_$1_client_packet_t, webapp_client_packet_type, packet_type, client_packet_type;
+	type webapp_$1_server_packet_t, webapp_server_packet_type, packet_type, server_packet_type;
 
 	# Type for cache files
 	# Many CMSs, CRMs and other web apps provide
@@ -615,6 +670,10 @@ template(`webapp_types',`
 	# This type is for read and write static files
 	type webapp_$1_rw_content_t, webapp_content_type, webapp_$1_file_type, webapp_file_type;
 	files_type(webapp_$1_rw_content_t)
+
+	# This type is for pseudo terminal (pty) devices
+	type webapp_$1_devpts_t;
+	term_pty(webapp_$1_devpts_t)
 
 	# Type for web application etc files
 	# In the case Linux fs namespace is used to
@@ -655,6 +714,12 @@ template(`webapp_types',`
 	#files_mountpoint(webapp_$1_mount_t)
 	files_type(webapp_$1_mount_t)
 
+	# Type for web application password files
+	# In the case Linux fs namespace is used to
+	# bind mount a custom etc directory
+	type webapp_$1_passwd_file_t, webapp_passwd_file_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_passwd_file_t)
+
 	# Type for web application php ini files
 	# In the case Linux fs namespace is used to
 	# bind mount a custom etc directory
@@ -685,8 +750,8 @@ template(`webapp_types',`
 ########################################
 ## <summary>
 ##	Web application assign attributes template.
-##	Assign attributes to the web application domain and
-##	its objects.
+##	Assign attributes to the web application
+##	domain and its objects.
 ## </summary>
 ## <param name="identity">
 ##	<summary>
@@ -863,8 +928,10 @@ template(`webapp_child_domain',`
 	webapp_read_custom_etc($2, webapp_$1_t)
 	webapp_read_custom_ld_so_cache($2, webapp_$1_t)
 	webapp_read_custom_net_conf($2, webapp_$1_t)
+	webapp_read_custom_passwd_file($2, webapp_$1_t)
 	webapp_read_custom_php_ini($2, webapp_$1_t)
 	manage_sock_files_pattern(webapp_$1_t, webapp_$2_var_run_t, webapp_$2_var_run_t)
+	allow webapp_$2_t webapp_$1_t:unix_stream_socket { getattr ioctl };
 	manage_files_pattern(webapp_$1_t, webapp_$2_tmp_t, webapp_$2_tmp_t)
 	manage_files_pattern(webapp_$1_t, webapp_$2_log_t, webapp_$2_log_t)
 	webapp_append_log($1, webapp_$2_t)
@@ -942,6 +1009,29 @@ template(`webapp_supervisord_domain',`
 ')
 
 ########################################
+## <summary>
+##	Web application systemd 
+##	domain template. Allow the
+##	web application domain to be
+##	started exuting systemctl.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the domain. Example, foo is
+##	the identity of the webapp_foo_t domain.
+##	</summary>
+## </param>
+
+template(`webapp_systemd_domain',`
+
+
+	type webapp_$1_unit_file_t;
+	systemd_unit_file(webapp_$1_unit_file_t)
+	webapp_init_domain($1)
+
+')
+
+########################################
 ## Permission related templates
 ########################################
 
@@ -969,7 +1059,7 @@ template(`webapp_perms',`
 	')
 
 	# Internal privileges
-	allow webapp_$1_t self:capability { kill setgid setuid sys_nice sys_tty_config };
+	allow webapp_$1_t self:capability { kill };
 	# dontaudit webapp_$1_t self:capability { net_admin sys_tty_config };
 	allow webapp_$1_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execstack execheap };
 	allow webapp_$1_t self:fd use;
@@ -994,7 +1084,6 @@ template(`webapp_perms',`
 
 	# Execute library scripts in the caller domain
 	libs_exec_lib_files(webapp_$1_t)
-	#libs_read_lib_files(webapp_$1_t)
 
 	# Execute ldconfig in the caller domain
 	libs_exec_ldconfig(webapp_$1_t)
@@ -1050,11 +1139,6 @@ template(`webapp_perms',`
 	files_tmp_filetrans(webapp_$1_t, webapp_$1_tmp_t, { file dir })
 	webapp_manage_tmp_files($1, webapp_$1_t)
 
-	# Some web applications/frameworks requires execution permission of its tmp files
-	tunable_policy(`webapp_$1_exec_tmp',`
-		can_exec(webapp_$1_t, webapp_$1_tmp_t)
-	')
-
 	# Allow create objects in a virtual memory filesystem (tmpfs),
 	# with a private type using a type transition.
 	fs_tmpfs_filetrans(webapp_$1_t, webapp_$1_tmpfs_t, { dir file lnk_file sock_file fifo_file })
@@ -1067,8 +1151,11 @@ template(`webapp_perms',`
 	# Allow the domain to read web application config files	
 	webapp_read_conf($1, webapp_$1_t)
 
-	# Allow the domain to read web application mount files	
+	# Allow the domain to read web application mount files
 	webapp_read_mount($1, webapp_$1_t)
+
+	# Allow the domain to read web application custom etc files
+	webapp_read_custom_etc_files($1, webapp_$1_t)
 	
 	# Allow the domain to manage web application cache
 	webapp_manage_cache($1, webapp_$1_t)
@@ -1095,12 +1182,72 @@ template(`webapp_perms',`
 		kernel_read_net_sysctls(webapp_$1_t)
 	')
 
-	# Execution
+	# Capabilities
+
+	# Allow web application server to make
+	# arbitrary changes to file UIDs and GIDs
+	tunable_policy(`webapp_$1_enable_chown',`	
+		allow webapp_$1_t self:capability chown;
+	')
 
 	# Allow process trace
 	tunable_policy(`webapp_$1_enable_ptrace',`	
 		allow webapp_$1_t self:capability sys_ptrace;
 		allow webapp_$1_t self:process ptrace;
+	')
+
+	# Allow webapplication to change system limits
+	tunable_policy(`webapp_$1_setrlimit',`
+		allow webapp_$1_t self:process setrlimit;
+		allow webapp_$1_t self:capability sys_resource;
+	')
+
+	# Allow webapplication to change its base priority
+	tunable_policy(`webapp_$1_sys_nice',`
+		allow webapp_$1_t self:capability sys_nice;
+	')
+
+	# Allow employ various privileged ioctl operations on virtual terminals
+	tunable_policy(`webapp_$1_sys_tty_config',`
+		allow webapp_$1_t self:capability sys_tty_config;
+	')
+
+	# Allow set the effective group ID of the current process,
+	tunable_policy(`webapp_$1_setgid',`
+		allow webapp_$1_t self:capability setgid;
+	')
+
+	# Allow set the effective user ID of the current process,
+	tunable_policy(`webapp_$1_setuid',`
+		allow webapp_$1_t self:capability setuid;
+	')
+
+	# Allow web application server to change the
+	# apparent root directory for the current
+	# running process and its children
+	tunable_policy(`webapp_$1_enable_chroot',`	
+		allow webapp_$1_t self:capability sys_chroot;
+	')
+
+
+	# Process
+
+	# Allow execmem and execstack operations.
+	tunable_policy(`webapp_$1_execmem',`
+        	allow webapp_$1_t self:process { execmem execstack };
+	')
+
+	# Execution
+
+	# Building the policy binary fails with RHEL selinux-policy 3.12.1
+	# based on reference policy revision  2.20091117
+	# if webapp_network_tcp is located within a tunable statement.
+	# Allow authentication with PAM.
+	optional_policy(`
+		tunable_policy(`webapp_$1_auth_pam',`
+    	    		auth_domtrans_chkpwd(webapp_$1_t)
+        		logging_send_audit_msgs(webapp_$1_t)
+		')
 	')
 
 	# Execute the web application executable
@@ -1117,8 +1264,15 @@ template(`webapp_perms',`
 	# Allow web application execute hostname
 	# binary in the hostname domain
 	optional_policy(`
+		gen_require(`
+			type hostname_t;
+		')
 		tunable_policy(`webapp_$1_exec_hostname',`
 			hostname_domtrans(webapp_$1_t)
+			webapp_read_custom_ld_so_cache($1, hostname_t)
+		')
+		tunable_policy(`webapp_$1_exec_hostname && webapp_$1_enable_tuntap',`
+			corenet_rw_tun_tap_dev(hostname_t)
 		')
 	')
 
@@ -1131,7 +1285,7 @@ template(`webapp_perms',`
 	')
 
 	# Allow web application execute mount
-	# binary in the mount domain
+	# binary in the mount domain.
 	optional_policy(`
 		tunable_policy(`webapp_$1_exec_mount',`
 			mount_domtrans(webapp_$1_t)
@@ -1148,9 +1302,19 @@ template(`webapp_perms',`
 		')
 	')
 
+	# Allow web application execute ping in the ping domain
+	tunable_policy(`webapp_$1_exec_ping',`
+		netutils_domtrans_ping(webapp_$1_t)
+	')
+
 	# Allow web application execute uwsgi binary
 	tunable_policy(`webapp_$1_exec_uwsgi',`
 		webapp_exec_uwsgi(webapp_$1_t)
+	')
+
+	# Some web applications/frameworks requires execution permission of its tmp files
+	tunable_policy(`webapp_$1_exec_tmp',`
+		can_exec(webapp_$1_t, webapp_$1_tmp_t)
 	')
 
 	# Allow run gpg
@@ -1162,26 +1326,13 @@ template(`webapp_perms',`
 
 	# Files and filesystems
 
-	# Allow web application server to make
-	# arbitrary changes to file UIDs and GIDs
-	tunable_policy(`webapp_$1_enable_chown',`	
-		allow webapp_$1_t self:capability chown;
-	')
-
-	# Allow web application server to change the
-	# apparent root directory for the current
-	# running process and its children
-	tunable_policy(`webapp_$1_enable_chroot',`	
-		allow webapp_$1_t self:capability sys_chroot;
-	')
-
 	# Allow access cifs file systems
 	tunable_policy(`webapp_$1_enable_homedirs && webapp_$1_enable_cifs',`
 		fs_list_cifs(webapp_$1_t)
 		fs_read_cifs_files(webapp_$1_t)
 		fs_read_cifs_symlinks(webapp_$1_t)
 	')
-	
+
 	# Allow access nfs file systems
 	tunable_policy(`webapp_$1_enable_homedirs && webapp_$1_enable_nfs',`
 		fs_list_nfs(webapp_$1_t)
@@ -1208,20 +1359,34 @@ template(`webapp_perms',`
 	tunable_policy(`webapp_$1_read_etc',`
 		files_read_etc_files(webapp_$1_t)
 	')
+
+	# Allow the domain to read the passwd
+	# passwords file (/etc/passwd)
+	tunable_policy(`webapp_$1_read_passwd_file',`
+		auth_read_passwd(webapp_$1_t)
+	')
 	
 	# Networking
 
-	tunable_policy(`webapp_$1_tcp_connect',`
+	# Building the policy binary fails with RHEL selinux-policy 3.12.1
+	# based on reference policy revision  2.20091117
+	# if webapp_network_tcp is located within a tunable statement.
+	# However, the policy builds fine with RHEL selinux-policy 3.7.19.
+	#tunable_policy(`webapp_$1_tcp_connect',`
 		webapp_network_tcp(webapp_$1_t)
-	')
+	#')
 
-	tunable_policy(`webapp_$1_tcp_listen',`
+	# Building the policy binary fails with RHEL selinux-policy 3.12.1
+	# based on reference policy revision 2.20091117
+	# if webapp_network_tcp is located within a tunable statement.
+	# However, the policy builds fine with RHEL selinux-policy 3.7.19.
+	#tunable_policy(`webapp_$1_tcp_listen',`
 		webapp_network_tcp(webapp_$1_t)
 		allow webapp_$1_t webapp_$1_port_t:tcp_socket name_bind;
 		allow webapp_$1_t node_t:tcp_socket node_bind;
 		allow webapp_$1_t webapp_$1_node_t:tcp_socket node_bind;
 		allow webapp_$1_t webapp_$1_port_t:tcp_socket { send_msg recv_msg };
-	')
+	#')
 
 	# Allow bind to HTTP port
 	tunable_policy(`webapp_$1_bind_http_port',`
@@ -1273,9 +1438,10 @@ template(`webapp_perms',`
 
 	# Allow connect to openstack
 	tunable_policy(`webapp_$1_connect_openstack',`
-		#corenet_tcp_connect_keystone_port(webapp_$1_t)
-		corenet_tcp_connect_commplex_port(webapp_$1_t)
-		corenet_tcp_connect_glance_port(webapp_$1_t)
+	        corenet_tcp_connect_keystone_port(webapp_$1_t)
+        	corenet_tcp_connect_all_ephemeral_ports(webapp_$1_t)
+        	corenet_tcp_connect_glance_port(webapp_$1_t)
+        	corenet_tcp_connect_osapi_compute_port(webapp_$1_t)
 	')
 
 	# Allow connect to POP/IMAP servers	
@@ -1289,17 +1455,25 @@ template(`webapp_perms',`
 	')
 
 	# Allow connect to Manage Sieve
-	tunable_policy(`webapp_$1_connect_sieve',`
+	# Building the policy binary fails with RHEL selinux-policy 3.12.1
+	# based on reference policy revision  2.20091117
+	# if webapp_connect_sieve is located within a tunable statement.
+	# However, the policy builds fine with RHEL selinux-policy 3.7.19.
+	#tunable_policy(`webapp_$1_connect_sieve',`
 		webapp_connect_sieve(webapp_$1_t)
-	')
+	#')
 
 	# Allow the specified domain to connect to the
 	# system log service (syslog), to send messages be added to
 	# the system logs. Typically this is used by services
 	# that do not have their own log file in /var/log
-	tunable_policy(`webapp_$1_connect_syslog',`
+	# Building the policy binary fails with RHEL selinux-policy 3.12.1
+	# based on reference policy revision  2.20091117
+	# if logging_send_syslog_msg is located within a tunable statement.
+	# However, the policy builds fine with selinux-policy 3.7.19.
+	# tunable_policy(`webapp_$1_connect_syslog',`
 		logging_send_syslog_msg(webapp_$1_t)
-	')
+	#')
 
 	# Allow use Nagios IT infrastructure monitoring
 	optional_policy(`
@@ -1348,12 +1522,6 @@ template(`webapp_perms',`
 	# Allow connect to WHOIS servers
 	tunable_policy(`webapp_$1_connect_whois',`
 		webapp_connect_whois(webapp_$1_t)
-	')
-
-	# Allow webapplication to change system limits
-	tunable_policy(`webapp_$1_setrlimit',`
-		allow webapp_$1_t self:process setrlimit;
-		allow webapp_$1_t self:capability sys_resource;
 	')
 
 	# Allow web application the ability to read/write terminals
@@ -2089,9 +2257,10 @@ interface(`webapp_read_ro_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
 
-	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	list_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 
@@ -2119,9 +2288,10 @@ interface(`webapp_manage_ro_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
 
-	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	manage_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	manage_fifo_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
@@ -2151,8 +2321,9 @@ interface(`webapp_relabelfrom_ro_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
-	relabelfrom_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	relabelfrom_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 
@@ -2180,8 +2351,9 @@ interface(`webapp_relabelto_ro_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
-	relabelto_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
+	relabelto_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_content_t)
 
@@ -2236,9 +2408,10 @@ interface(`webapp_read_rw_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
 
-	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	list_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	
@@ -2266,9 +2439,10 @@ interface(`webapp_manage_rw_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
 
-	manage_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	manage_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	manage_fifo_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
@@ -2298,8 +2472,9 @@ interface(`webapp_relabelfrom_rw_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
-	relabelfrom_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	relabelfrom_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 
@@ -2327,8 +2502,9 @@ interface(`webapp_relabelto_rw_content',`
 	gen_require(`
 		type webapp_$1_content_t;
 		type webapp_$1_rw_content_t;
+		type httpd_sys_content_t;
 	')
-	relabelto_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
+	relabelto_dirs_pattern($2, { httpd_sys_content_t webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_rw_content_t)
 
@@ -2499,6 +2675,54 @@ interface(`webapp_relabel_static_content',`
 
 ')
 
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	all web applications' static content files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_all_static_content',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		type httpd_sys_content_t;
+	')
+
+	list_dirs_pattern($1, { httpd_sys_content_t webapp_content_type }, webapp_content_type)
+	read_files_pattern($1, webapp_content_type, webapp_content_type)
+	read_lnk_files_pattern($1, webapp_content_type, webapp_content_type)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the all applications' read content and
+##	read write content files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_all_static_content',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		type httpd_sys_content_t;
+	')
+
+	manage_dirs_pattern($1, { httpd_sys_content_t webapp_content_type }, webapp_content_type)
+	manage_files_pattern($1, webapp_content_type, webapp_content_type)
+	manage_lnk_files_pattern($1, webapp_content_type, webapp_content_type)
+
+')
 
 ########################################
 ## <summary>
@@ -3130,6 +3354,33 @@ interface(`webapp_relabel_custom_etc',`
 ########################################
 ## <summary>
 ##	Allow the specified domain to read
+##	all files in the mounted etc direstory.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_etc_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_etc_files',`
+
+	webapp_read_custom_etc($1, $2)
+	webapp_read_custom_net_conf($1, $2)
+	webapp_read_custom_passwd_file($1, $2)
+	webapp_read_custom_php_ini($1, $2)
+
+')
+
+
+########################################
+## <summary>
+##	Allow the specified domain to read
 ##	the web application's custom etc runtime files.
 ## </summary>
 ## <param name="identity">
@@ -3636,6 +3887,150 @@ interface(`webapp_relabel_custom_ld_so_cache',`
 
 	webapp_relabelfrom_custom_ld_so_cache($1, $2)
 	webapp_relabelto_custom_ld_so_cache($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	the web application's custom passwd file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_passwd_file_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_custom_passwd_file',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_passwd_file_t;
+	')
+
+	read_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+	read_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's custom passwd file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_passwd_file_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_manage_custom_passwd_file',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_passwd_file_t;
+	')
+
+	manage_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+	manage_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's custom passwd file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_passwd_file_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_custom_passwd_file',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_passwd_file_t;
+	')
+
+	relabelfrom_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+	relabelfrom_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's custom passwd file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_passwd_file_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_custom_passwd_file',`
+
+	gen_require(`
+		type webapp_$1_etc_t;
+		type webapp_$1_passwd_file_t;
+	')
+
+	relabelto_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+	relabelto_lnk_files_pattern($2, webapp_$1_etc_t, webapp_$1_passwd_file_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's custom passwd file.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_passwd_file_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_custom_passwd_file',`
+
+	webapp_relabelfrom_custom_passwd_file($1, $2)
+	webapp_relabelto_custom_passwd_file($1, $2)
 
 ')
 
@@ -5254,6 +5649,29 @@ interface(`webapp_stream_connect_to',`
 ########################################
 ## <summary>
 ##	Allow the specified domain to
+##	connect to all web applications
+##      using a UNIX domain stream socket.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`webapp_stream_connect_to_all',`
+
+	gen_require(`
+		attribute webapp_domain;
+		attribute webapp_var_run_type;
+	')
+
+	files_search_pids($1)
+	stream_connect_pattern($1, webapp_var_run_type, webapp_var_run_type, webapp_domain)
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
 ##	tcp connect to the web application.
 ## </summary>
 ## <param name="identity">
@@ -5287,6 +5705,35 @@ interface(`webapp_tcp_connect_to',`
 
 ########################################
 ## <summary>
+##	Allow the specified domain to
+##	tcp connect to all web applications.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_tcp_connect_to_all',`
+
+	gen_require(`
+		attribute webapp_client_packet_type;
+		attribute webapp_domain;
+		attribute webapp_netif_type;
+		attribute webapp_node_type;
+		attribute webapp_port_type;
+	')
+	
+	allow $1 webapp_port_type:tcp_socket name_connect;
+	allow $1 webapp_client_packet_type:packet { send recv };
+	allow $1 webapp_netif_type:netif ingress;
+	allow $1 webapp_node_type:node { tcp_send tcp_recv sendto recvfrom };
+	corenet_tcp_recvfrom_labeled($1, webapp_domain)
+
+')
+
+########################################
+## <summary>
 ##      Allow the specified domain administration
 ##	privileges of the web application.
 ## </summary>
@@ -5313,9 +5760,17 @@ interface(`webapp_tcp_connect_to',`
 #
 interface(`webapp_adm',`
 
+	gen_require(`
+		type webapp_unit_file_t;
+	')
+
 	webapp_manage_files($1, $2)
 	webapp_stream_connect_to($1, $2)
 	webapp_tcp_connect_to($1, $2)
+        systemd_exec_systemctl($2)
+        allow $2 webapp_unit_file_t:file read_file_perms;
+        allow $2 webapp_unit_file_t:service manage_service_perms;
+
 ')
 
 
