@@ -45,9 +45,34 @@ webapp_supervisord_domain(cms)
 webapp_base(cmschild)
 webapp_pl_files(childcms)
 webapp_child_domain(cms, childcms)
+webapp_list_content_dirs(childcms, webapp_cms_t)
+```
+
+To define a Python web application with identity *emperor*, controlled by Systemd, which forks children into its own domain:
+
+```
+webapp_base(emperor)
+webapp_systemd_domain(emperor)
+webapp_base(oribnet)
+webapp_py_files(oribnet)
+webapp_child_domain(emperor, oribnet)
+webapp_list_content_dirs(oribnet, webapp_emperor_t)
 ```
 
 It could be useful that the worker processes have its own security context, rather then sharing the security with the parent process, thus fullfilling necessary minimum privileges for the worker processes as well as for the parent process. Of course, the web application and application server must support forking children into its own domain.
+
+This is an example of a Python uwsgi web application with identity uwsgi started with Systemd, where emperors run in a separate domain, and the web application's worker processes run in their own domains.
+
+```
+webapp_base(uwsgi)
+webapp_systemd_domain(uwsgi)
+webapp_base(emperor)
+webapp_child_domain(uwsgi, emperor)
+webapp_base(oribnet)
+webapp_py_files(oribnet)
+webapp_child_domain(emperor, oribnet)
+webapp_list_content_dirs(oribnet, webapp_emperor_t)
+```
 
 Below is the output of *ps axZ|grep uwsgi* on a CentOS 6.6 box, running some web applications, where the main process, the emperor processes, and the working processes have their own security context.
 
