@@ -61,7 +61,7 @@ webapp_list_content_dirs(oribnet, webapp_emperor_t)
 
 It could be useful that the worker processes have its own security context, rather then sharing the security with the parent process, thus fullfilling necessary minimum privileges for the worker processes as well as for the parent process. Of course, the web application and application server must support forking children into its own domain.
 
-This is an example of a Python uwsgi web application with identity uwsgi started with Systemd, where emperors run in a separate domain, and the web application's worker processes run in their own domains.
+This is an example of a Python uWSGI web application with identity *uwsgi* started with Systemd, where emperors run in a separate domain, and the web application's worker processes run in their own domains.
 
 ```
 webapp_base(uwsgi)
