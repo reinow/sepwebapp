@@ -138,3 +138,17 @@ files_type(uwsgi_exec_t)
 #webapp_manage_files(shop, ftpd_t)
 #webapp_manage_php_scripts(shop, ftpd_t)
 
+# This is an example of Python uwsgi web application
+# with identity uwsgi started with Systemd,
+# where emperors run in a separate domain, and the
+# web application's worker processes run in their
+# own domains 
+#webapp_base(uwsgi)
+#webapp_systemd_domain(uwsgi)
+#webapp_base(emperor)
+#webapp_child_domain(uwsgi, emperor)
+#webapp_base(oribnet)
+#webapp_py_files(oribnet)
+#webapp_child_domain(emperor, oribnet)
+#webapp_list_content_dirs(oribnet, webapp_emperor_t)
+
