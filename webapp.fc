@@ -1,4 +1,4 @@
-## Copyright (c) 2013, 2014 Reino Wallin
+## Copyright (c) 2013, 2014, 2015 Reino Wallin
 
 ##	This program is free software; you can redistribute it and/or
 ##	modify it under the terms of the GNU General Public License as
@@ -39,4 +39,31 @@
 #/var/www/vhosts/example\.com/mount/var/tmp(/.*)?		gen_context(system_u:object_r:webapp_joomla_tmp_t,s0)
 #/var/www/vhosts/example\.com/mount/var/run(/.*)?		gen_context(system_u:object_r:webapp_joomla_var_run_t,s0)
 #/var/www/vhosts/example\.com/public_html/.*\.php	--	gen_context(system_u:object_r:webapp_joomla_php_script_t,s0)
+
+# This is an example of Python uwsgi web application
+# with identity uwsgi started with Systemd,
+# where emperors run in a separate domain, and the
+# web application's worker processes run in their
+# own domains.
+#/var/log/uwsgi(/.*)?							gen_context(system_u:object_r:webapp_uwsgi_log_t,s0)
+#/etc/systemd/system/emperor\.uwsgi\.service			--	gen_context(system_u:object_r:webapp_uwsgi_unit_file_t,s0)
+#/usr/lib/systemd/system/emperor\.uwsgi\.service		--	gen_context(system_u:object_r:webapp_uwsgi_unit_file_t,s0)
+#/usr/(local/sbin|sbin)/uwsgi					--	gen_context(system_u:object_r:uwsgi_exec_t,s0)
+#/usr/local/sbin/vhost-uwsgi\.sh				--	gen_context(system_u:object_r:webapp_uwsgi_exec_t,s0)
+#/var/www/vhosts/oribium_net(/.*)?					gen_context(system_u:object_r:webapp_oribnet_content_t,s0)
+#/var/www/vhosts/oribium_net/logs(/.*)?					gen_context(system_u:object_r:webapp_oribnet_log_t,s0)
+#/var/www/vhosts/oribium_net/cache(/.*)?				gen_context(system_u:object_r:webapp_oribnet_cache_t,s0)
+#/var/www/vhosts/oribium_net/conf(/.*)?					gen_context(system_u:object_r:webapp_oribnet_config_t,s0)
+#/var/www/vhosts/oribium_net/static/media/(uploads|product)(/.*)?	gen_context(system_u:object_r:webapp_oribnet_rw_content_t,s0)
+#/var/www/vhosts/oribium_net/.*\.(py|pyc|pyo)			--	gen_context(system_u:object_r:webapp_oribnet_py_script_t,s0)
+#/var/www/vhosts/oribium_net/app\.(py|pyc|pyo)			--	gen_context(system_u:object_r:webapp_oribnet_exec_t,s0)
+#/var/www/vhosts/mount/oribium_net(/.*)?				gen_context(system_u:object_r:webapp_oribnet_mount_t,s0)
+#/var/www/vhosts/mount/oribium_net/etc(/.*)?				gen_context(system_u:object_r:webapp_oribnet_etc_t,s0)
+#/var/www/vhosts/mount/oribium_net/etc/ld\.so\.cache		--	gen_context(system_u:object_r:webapp_oribnet_ld_so_cache_t,s0)
+#/var/www/vhosts/mount/oribium_net/etc/hosts			--	gen_context(system_u:object_r:webapp_oribnet_net_conf_t,s0)
+#/var/www/vhosts/mount/oribium_net/etc/mtab			--	gen_context(system_u:object_r:webapp_oribnet_etc_runtime_t,s0)
+#/var/www/vhosts/mount/oribium_net/etc/passwd			--	gen_context(system_u:object_r:webapp_oribnet_passwd_file_t,s0)
+#/var/www/vhosts/mount/oribium_net/etc/resolv\.conf		--	gen_context(system_u:object_r:webapp_oribnet_net_conf_t,s0)
+#/var/log/uwsgi/oribium\.net(/.*)?					gen_context(system_u:object_r:webapp_oribnet_log_t,s0)
+
 
