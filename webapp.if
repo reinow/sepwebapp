@@ -1103,7 +1103,7 @@ template(`webapp_perms',`
 
 	# Create web application custom etc runtime
 	# files with an automatic type transition
-	webapp_etc_filetrans_etc_runtime($1, file, webapp_$1_t)
+	webapp_filetrans_custom_etc_runtime($1, file, webapp_$1_t)
 
 	# Get the attributes of persistent
 	# filesystems which have extended
@@ -1297,7 +1297,7 @@ template(`webapp_perms',`
 			# Create, web application custom etc runtime
 			# files with an automatic type transition,
 			# and make the files usable as etc runtime files.
-			webapp_etc_filetrans_etc_runtime($1, file, mount_t)
+			webapp_filetrans_custom_etc_runtime($1, file, mount_t)
 			webapp_manage_custom_etc_runtime($1, mount_t)
 		')
 	')
@@ -3463,7 +3463,7 @@ interface(`webapp_manage_custom_etc_runtime',`
 ##      </summary>
 ## </param>
 #
-interface(`webapp_etc_filetrans_etc_runtime',`
+interface(`webapp_filetrans_custom_etc_runtime',`
         gen_require(`
                 type webapp_$1_etc_t;
 		type webapp_$1_etc_runtime_t;
