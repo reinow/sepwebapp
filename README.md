@@ -148,7 +148,7 @@ where id is the identity. Example, foo is the identity of the webapp_foo_port_t 
 
 ###Linux namespace related types
 
-Some application servers, like uwsgi, have native support for Linux namespaces. Linux namespaces are an elegant way to detach the process from a specific layer of the kernel and assign it to a new one. You can, for instance, mount a specific etc directory to each of the web applications, but you can also create specific PIDs, IPC, and networking for each of the web applications. The types below are related to Linux namespaces. If you are using uwsgi, there is a snippet explaining how to run the emperor process in one domain, and each web application's worker processes in a separate domain.
+Some application servers, like uWSGI, have native support for Linux namespaces. Linux namespaces are an elegant way to detach the process from a specific layer of the kernel and assign it to a new one. You can, for instance, mount a specific etc directory to each of the web applications, but you can also create specific PIDs, IPC, and networking for each of the web applications. The types below are related to Linux namespaces. If you are using uWSGI, there is a [snippet](http://uwsgi-docs.readthedocs.org/en/latest/Snippets.html "uWSGI snippet") explaining how to run the emperor process in one domain, and each web application's worker processes in a separate domain.
 
 * webapp_id_etc_runtime_t
 * webapp_id_etc_t
@@ -232,7 +232,7 @@ For each web application it is required to label the related files. Below is an 
 /var/www/example\.com/cms/app\.(py|pyc|pyo)	--	gen_context(system_u:object_r:webapp_cms_exec_t,s0)
 ```
 
-This is an example of a Joomla 3 web application and the uwsgi application server, with Linux namespaces in use. The directories /etc, /tmp, /var/tmp, and /var/run were mounted in the application server's namespace.
+This is an example of a Joomla 3 web application and the uWSGI application server, with Linux namespaces in use. The directories /etc, /tmp, /var/tmp, and /var/run were mounted in the application server's namespace.
 
 ```
 /var/www/example\.com/public_html(/.*)?			gen_context(system_u:object_r:webapp_cms_content_t,s0)
