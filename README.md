@@ -167,6 +167,8 @@ For each web application the following tunables are defined:
 * webapp_id_auth_pam
 * webapp_id_auth_use_nsswitch
 * webapp_id_bind_http_port
+* webapp_id_chown
+* webapp_id_chroot
 * webapp_id_connect_abrt
 * webapp_id_connect_ftp
 * webapp_id_connect_gopher
@@ -180,8 +182,6 @@ For each web application the following tunables are defined:
 * webapp_id_connect_whois
 * webapp_id_dbus_avahi
 * webapp_id_enable_cache
-* webapp_id_enable_chown
-* webapp_id_enable_chroot
 * webapp_id_enable_cifs
 * webapp_id_enable_ftp_server
 * webapp_id_enable_gpg
@@ -189,7 +189,6 @@ For each web application the following tunables are defined:
 * webapp_id_enable_nagios
 * webapp_id_enable_nfs
 * webapp_id_enable_openca
-* webapp_id_enable_ptrace
 * webapp_id_enable_tuntap
 * webapp_id_enable_zarafa
 * webapp_id_exec_bin
@@ -203,6 +202,7 @@ For each web application the following tunables are defined:
 * webapp_id_install_mode
 * webapp_id_manage_config
 * webapp_id_mod_auth_pam
+* webapp_id_ptrace
 * webapp_id_read_etc
 * webapp_id_read_passwd_file
 * webapp_id_read_sysctls_net

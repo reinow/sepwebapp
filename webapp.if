@@ -86,7 +86,17 @@ template(`webapp_tunables',`
         ## </tunable>
 	gen_tunable(webapp_$1_read_sysctls_net, false)
 
-        ## <tunable name="webapp_id_enable_chown dftval="false">
+        ## <tunable name="webapp_id_block_suspend dftval="false">
+	## <desc>
+	## <p>
+	## Employ features that can block system suspend
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_block_suspend, false)
+
+
+        ## <tunable name="webapp_id_chown dftval="false">
 	## <desc>
 	## <p>
 	## Allow web application process to make
@@ -94,9 +104,9 @@ template(`webapp_tunables',`
 	## </p>
 	## </desc>
         ## </tunable>
-	gen_tunable(webapp_$1_enable_chown, false)
+	gen_tunable(webapp_$1_chown, false)
 
-        ## <tunable name="webapp_id_enable_chroot dftval="false">
+        ## <tunable name="webapp_id_chroot dftval="false">
 	## <desc>
 	## <p>
 	## Allow web application process to change the
@@ -105,7 +115,7 @@ template(`webapp_tunables',`
 	## </p>
 	## </desc>
         ## </tunable>
-	gen_tunable(webapp_$1_enable_chroot, false)
+	gen_tunable(webapp_$1_chroot, false)
 
         ## <tunable name="webapp_id_enable_cifs dftval="false">
 	## <desc>
@@ -308,14 +318,23 @@ template(`webapp_tunables',`
 	## </tunable>
 	gen_tunable(webapp_$1_execmem, false)
 
-	## <tunable name="webapp_id_enable_ptrace dftval="false">
+	## <tunable name="webapp_id_ptrace dftval="false">
 	## <desc>
 	## <p>
 	## Allow process trace
 	## </p>
 	## </desc>
 	## </tunable>
-	gen_tunable(webapp_$1_enable_ptrace, false)
+	gen_tunable(webapp_$1_ptrace, false)
+
+	## <tunable name="webapp_id_net_admin dftval="false">
+	## <desc>
+	## <p>
+	## Allow various network-related operations
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_net_admin, false)
 
 	## <tunable name="webapp_id_bind_http_port dftval="false">
 	## <desc>
@@ -1184,14 +1203,24 @@ template(`webapp_perms',`
 
 	# Capabilities
 
+	# Employ features that can block system suspend
+	tunable_policy(`webapp_$1_block_suspend',`	
+		allow webapp_$1_t self:capability2 block_suspend;
+	')
+
 	# Allow web application server to make
 	# arbitrary changes to file UIDs and GIDs
-	tunable_policy(`webapp_$1_enable_chown',`	
+	tunable_policy(`webapp_$1_chown',`	
 		allow webapp_$1_t self:capability chown;
 	')
 
+	# Allow various network-related operations
+	tunable_policy(`webapp_$1_net_admin',`
+		allow webapp_$1_t self:capability net_admin;
+	')
+
 	# Allow process trace
-	tunable_policy(`webapp_$1_enable_ptrace',`	
+	tunable_policy(`webapp_$1_ptrace',`	
 		allow webapp_$1_t self:capability sys_ptrace;
 		allow webapp_$1_t self:process ptrace;
 	')
@@ -1225,10 +1254,9 @@ template(`webapp_perms',`
 	# Allow web application server to change the
 	# apparent root directory for the current
 	# running process and its children
-	tunable_policy(`webapp_$1_enable_chroot',`	
+	tunable_policy(`webapp_$1_chroot',`	
 		allow webapp_$1_t self:capability sys_chroot;
 	')
-
 
 	# Process
 
