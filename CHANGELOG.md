@@ -1,3 +1,11 @@
+###1.3.2
+
+Added tunables:
+
+webapp_id_dbus_sssd, webapp_id_connect_sssd, webapp_id_read_public_sssd
+
+Minor bugfixes.
+
 ###1.3.1
 
 Changed name of tunables:
