@@ -178,9 +178,11 @@ For each web application the following tunables are defined:
 * webapp_id_connect_openstack
 * webapp_id_connect_pop
 * webapp_id_connect_sieve
+* webapp_id_connect_sssd
 * webapp_id_connect_syslog
 * webapp_id_connect_whois
 * webapp_id_dbus_avahi
+* webapp_id_dbus_sssd
 * webapp_id_enable_cache
 * webapp_id_enable_cifs
 * webapp_id_enable_ftp_server
@@ -205,6 +207,7 @@ For each web application the following tunables are defined:
 * webapp_id_ptrace
 * webapp_id_read_etc
 * webapp_id_read_passwd_file
+* webapp_id_read_public_sssd
 * webapp_id_read_sysctls_net
 * webapp_id_sendmail
 * webapp_id_setgid
