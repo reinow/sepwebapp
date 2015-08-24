@@ -117,6 +117,17 @@ template(`webapp_tunables',`
         ## </tunable>
 	gen_tunable(webapp_$1_chroot, false)
 
+        ## <tunable name="webapp_id_dac_override dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to bypass file read,
+	## write, and execute permission checks.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_dac_override, false)
+
+
         ## <tunable name="webapp_id_enable_cifs dftval="false">
 	## <desc>
 	## <p>
@@ -279,6 +290,34 @@ template(`webapp_tunables',`
 	## </tunable>
 	gen_tunable(webapp_$1_dbus_avahi, false)
 
+	## <tunable name="webapp_id_dbus_sssd dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to communicate with sssd service via dbus
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_dbus_sssd, false)
+
+	## <tunable name="webapp_id_connect_sssd dftval="false">
+	## <desc>
+	## <p>
+	# Allow web application to connect to sssd
+	# over a unix stream socket
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_connect_sssd, false)
+
+	## <tunable name="webapp_id_read_public_sssd dftval="false">
+	## <desc>
+	## <p>
+	# Allow web application to read sssd public files
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_read_public_sssd, false)
+
 	## <tunable name="webapp_id_use_tty dftval="false">
 	## <desc>
 	## <p>
@@ -335,6 +374,16 @@ template(`webapp_tunables',`
 	## </desc>
 	## </tunable>
 	gen_tunable(webapp_$1_net_admin, false)
+
+	## <tunable name="webapp_id_sys_admin dftval="false">
+	## <desc>
+	## <p>
+	## Allow a range of system administration operations
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_sys_admin, false)
+
 
 	## <tunable name="webapp_id_bind_http_port dftval="false">
 	## <desc>
@@ -936,6 +985,7 @@ template(`webapp_rb_files',`
 template(`webapp_child_domain',`
 
 	gen_require(`
+		type var_run_t;
 		type webapp_$1_t;
 		type webapp_$2_t;
 		type webapp_$2_var_run_t;
@@ -949,12 +999,22 @@ template(`webapp_child_domain',`
 	webapp_read_custom_net_conf($2, webapp_$1_t)
 	webapp_read_custom_passwd_file($2, webapp_$1_t)
 	webapp_read_custom_php_ini($2, webapp_$1_t)
-	manage_sock_files_pattern(webapp_$1_t, webapp_$2_var_run_t, webapp_$2_var_run_t)
-	allow webapp_$2_t webapp_$1_t:unix_stream_socket { getattr ioctl };
+	manage_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
+	manage_fifo_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
+	manage_sock_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
+	allow webapp_$2_t webapp_$1_t:unix_stream_socket { connectto rw_socket_perms };
 	manage_files_pattern(webapp_$1_t, webapp_$2_tmp_t, webapp_$2_tmp_t)
 	manage_files_pattern(webapp_$1_t, webapp_$2_log_t, webapp_$2_log_t)
 	webapp_append_log($1, webapp_$2_t)
-
+	#webapp_append_log($2, webapp_$1_t)
+	optional_policy(`
+		gen_require(`
+			type hostname_t;
+		')
+		tunable_policy(`webapp_$1_exec_hostname',`
+			webapp_append_log($2, hostname_t)
+		')
+	')
 ')
 
 ########################################
@@ -1079,7 +1139,6 @@ template(`webapp_perms',`
 
 	# Internal privileges
 	allow webapp_$1_t self:capability { kill };
-	# dontaudit webapp_$1_t self:capability { net_admin sys_tty_config };
 	allow webapp_$1_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execstack execheap };
 	allow webapp_$1_t self:fd use;
 	allow webapp_$1_t self:sock_file read_sock_file_perms;
@@ -1214,6 +1273,12 @@ template(`webapp_perms',`
 		allow webapp_$1_t self:capability chown;
 	')
 
+	# Allow web application to bypass file read,
+	# write, and execute permission checks.
+	tunable_policy(`webapp_$1_dac_override',`	
+		allow webapp_$1_t self:capability dac_override;
+	')
+
 	# Allow various network-related operations
 	tunable_policy(`webapp_$1_net_admin',`
 		allow webapp_$1_t self:capability net_admin;
@@ -1229,6 +1294,11 @@ template(`webapp_perms',`
 	tunable_policy(`webapp_$1_setrlimit',`
 		allow webapp_$1_t self:process setrlimit;
 		allow webapp_$1_t self:capability sys_resource;
+	')
+
+	# Allow a range of system administration operations
+	tunable_policy(`webapp_$1_sys_admin',`
+		allow webapp_$1_t self:capability sys_admin;
 	')
 
 	# Allow webapplication to change its base priority
@@ -1298,6 +1368,7 @@ template(`webapp_perms',`
 		tunable_policy(`webapp_$1_exec_hostname',`
 			hostname_domtrans(webapp_$1_t)
 			webapp_read_custom_ld_so_cache($1, hostname_t)
+			allow hostname_t webapp_$1_t:unix_stream_socket { connectto rw_socket_perms };
 		')
 		tunable_policy(`webapp_$1_exec_hostname && webapp_$1_enable_tuntap',`
 			corenet_rw_tun_tap_dev(hostname_t)
@@ -1386,6 +1457,14 @@ template(`webapp_perms',`
 	# to files such as nsswitch.conf and mime.types.
 	tunable_policy(`webapp_$1_read_etc',`
 		files_read_etc_files(webapp_$1_t)
+	')
+
+	# Allow web application to look up user, password,
+	# group, or host information using the name service.
+	# Building the policy binary fails with RHEL selinux-policy 3.12.1
+	# based on reference policy revision 2.20091117
+	tunable_policy(`webapp_$1_auth_use_nsswitch',`
+		#auth_use_nsswitch(webapp_$1_t)
 	')
 
 	# Allow the domain to read the passwd
@@ -1540,10 +1619,36 @@ template(`webapp_perms',`
 		miscfiles_manage_public_files(webapp_$1_t)
 	')
 		
+	# Allow web application to communicate
+	# with avahi service via dbus
 	optional_policy(`
 		dbus_system_bus_client(webapp_$1_t)
 		tunable_policy(`webapp_$1_dbus_avahi',`
 			avahi_dbus_chat(webapp_$1_t)
+		')
+	')
+
+	# Allow web application to communicate
+	# with sssd service via dbus
+	optional_policy(`
+		dbus_system_bus_client(webapp_$1_t)
+		tunable_policy(`webapp_$1_dbus_sssd',`
+			sssd_dbus_chat(webapp_$1_t)
+		')
+	')
+
+	# Allow web application to connect to sssd
+	# over a unix stream socket
+	optional_policy(`
+		tunable_policy(`webapp_$1_connect_sssd',`
+			sssd_stream_connect(webapp_$1_t)
+		')
+	')
+
+	# Allow web application to read sssd public files
+	optional_policy(`
+		tunable_policy(`webapp_$1_read_public_sssd',`
+			sssd_read_public_files(webapp_$1_t)
 		')
 	')
 
@@ -5647,7 +5752,7 @@ interface(`webapp_sendrecv_client_packets',`
 ########################################
 ## <summary>
 ##	Allow the specified domain to
-##	connect to the web application.
+##	connect to the web application
 ##      using a UNIX domain stream socket.
 ## </summary>
 ## <param name="identity">
@@ -5672,6 +5777,7 @@ interface(`webapp_stream_connect_to',`
 
 	files_search_pids($2)
 	stream_connect_pattern($2, webapp_$1_var_run_t, webapp_$1_var_run_t, webapp_$1_t)
+
 ')
 
 ########################################
@@ -5695,6 +5801,7 @@ interface(`webapp_stream_connect_to_all',`
 
 	files_search_pids($1)
 	stream_connect_pattern($1, webapp_var_run_type, webapp_var_run_type, webapp_domain)
+
 ')
 
 ########################################
