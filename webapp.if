@@ -86,6 +86,15 @@ template(`webapp_tunables',`
         ## </tunable>
 	gen_tunable(webapp_$1_read_sysctls_net, false)
 
+        ## <tunable name="webapp_id_rw_sysctls_net dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to modify network sysctls.
+	## </p>
+	## </desc>
+        ## </tunable>
+	gen_tunable(webapp_$1_rw_sysctls_net, false)
+
         ## <tunable name="webapp_id_block_suspend dftval="false">
 	## <desc>
 	## <p>
@@ -281,6 +290,16 @@ template(`webapp_tunables',`
 	## </tunable>
 	gen_tunable(webapp_$1_manage_config, false)
 
+	## <tunable name="webapp_id_manage_cgroups dftval="false">
+	## <desc>
+	## <p>
+	## Allow web application to manage cgroup directories and files
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_manage_cgroups, false)
+
+
 	## <tunable name="webapp_id_dbus_avahi dftval="false">
 	## <desc>
 	## <p>
@@ -383,7 +402,6 @@ template(`webapp_tunables',`
 	## </desc>
 	## </tunable>
 	gen_tunable(webapp_$1_sys_admin, false)
-
 
 	## <tunable name="webapp_id_bind_http_port dftval="false">
 	## <desc>
@@ -709,7 +727,7 @@ template(`webapp_types',`
 
 	# Domain type
 	type webapp_$1_t, webapp_domain;
-	domain_type(webapp_$1_t);
+	domain_type(webapp_$1_t)
 	role system_r types webapp_$1_t;
 
 	# Port type
@@ -988,8 +1006,8 @@ template(`webapp_child_domain',`
 		type var_run_t;
 		type webapp_$1_t;
 		type webapp_$2_t;
+		type webapp_$1_var_run_t;
 		type webapp_$2_var_run_t;
-		type webapp_$2_tmp_t;
 	')
 
 	webapp_dyntrans($1, $2)
@@ -1000,13 +1018,16 @@ template(`webapp_child_domain',`
 	webapp_read_custom_passwd_file($2, webapp_$1_t)
 	webapp_read_custom_php_ini($2, webapp_$1_t)
 	manage_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
+	rw_files_pattern(webapp_$2_t, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
 	manage_fifo_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
+	rw_fifo_files_pattern(webapp_$2_t, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
 	manage_sock_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
-	allow webapp_$2_t webapp_$1_t:unix_stream_socket { connectto rw_socket_perms };
-	manage_files_pattern(webapp_$1_t, webapp_$2_tmp_t, webapp_$2_tmp_t)
-	manage_files_pattern(webapp_$1_t, webapp_$2_log_t, webapp_$2_log_t)
+	rw_sock_files_pattern(webapp_$2_t, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
+	webapp_stream_connect_to($1, webapp_$2_t)
+	webapp_stream_connect_to($2, webapp_$1_t)
+	allow webapp_$2_t webapp_$1_t:unix_stream_socket rw_stream_socket_perms;
+	webapp_manage_log($2, webapp_$1_t)
 	webapp_append_log($1, webapp_$2_t)
-	#webapp_append_log($2, webapp_$1_t)
 	optional_policy(`
 		gen_require(`
 			type hostname_t;
@@ -1139,7 +1160,7 @@ template(`webapp_perms',`
 
 	# Internal privileges
 	allow webapp_$1_t self:capability { kill };
-	allow webapp_$1_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execstack execheap };
+	allow webapp_$1_t self:process ~{ ptrace setcurrent setexec setfscreate execmem execstack execheap };
 	allow webapp_$1_t self:fd use;
 	allow webapp_$1_t self:sock_file read_sock_file_perms;
 	allow webapp_$1_t self:fifo_file rw_fifo_file_perms;
@@ -1260,6 +1281,11 @@ template(`webapp_perms',`
 		kernel_read_net_sysctls(webapp_$1_t)
 	')
 
+	# Allow web application to modify network sysctls
+	tunable_policy(`webapp_$1_rw_sysctls_net',`
+		kernel_rw_net_sysctls(webapp_$1_t)
+	')
+
 	# Capabilities
 
 	# Employ features that can block system suspend
@@ -1282,6 +1308,7 @@ template(`webapp_perms',`
 	# Allow various network-related operations
 	tunable_policy(`webapp_$1_net_admin',`
 		allow webapp_$1_t self:capability net_admin;
+		iptables_domtrans(webapp_$1_t)
 	')
 
 	# Allow process trace
@@ -1472,6 +1499,12 @@ template(`webapp_perms',`
 	tunable_policy(`webapp_$1_read_passwd_file',`
 		auth_read_passwd(webapp_$1_t)
 	')
+
+	# Allow manage all web application files.
+	# Suitable for upgrading and installation.
+	tunable_policy(`webapp_$1_install_mode',`
+		webapp_manage_files($1, webapp_$1_t)
+	')
 	
 	# Networking
 
@@ -1609,6 +1642,12 @@ template(`webapp_perms',`
 	# Allow manage web application config files
 	tunable_policy(`webapp_$1_manage_config',`
 		webapp_manage_conf($1, webapp_$1_t)
+	')
+
+	# Allow web application to manage cgroup directories and files
+	tunable_policy(`webapp_$1_manage_cgroups',`
+		fs_manage_cgroup_dirs(webapp_$1_t)
+		fs_manage_cgroup_files(webapp_$1_t)
 	')
 
 	# Allow web application to modify public files
@@ -3368,6 +3407,31 @@ interface(`webapp_read_custom_etc',`
 
 ########################################
 ## <summary>
+##	Allow the specified domain to read
+##	the web application's custom etc files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_all_custom_etc',`
+
+	gen_require(`
+		attribute webapp_etc_type;
+		attribute webapp_mount_type;
+	')
+
+	list_dirs_pattern($1, { webapp_etc_type webapp_mount_type }, webapp_etc_type)
+	read_files_pattern($1, webapp_etc_type, webapp_etc_type)
+	read_lnk_files_pattern($1, webapp_etc_type, webapp_etc_type)
+
+')
+
+
+########################################
+## <summary>
 ##	Allow the specified domain to manage
 ##	the web application's custom etc files.
 ## </summary>
@@ -3487,7 +3551,7 @@ interface(`webapp_relabel_custom_etc',`
 ########################################
 ## <summary>
 ##	Allow the specified domain to read
-##	all files in the mounted etc direstory.
+##	all files in the mounted etc directory.
 ## </summary>
 ## <param name="identity">
 ##	<summary>
@@ -3507,6 +3571,27 @@ interface(`webapp_read_custom_etc_files',`
 	webapp_read_custom_net_conf($1, $2)
 	webapp_read_custom_passwd_file($1, $2)
 	webapp_read_custom_php_ini($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	all web applications' all files in
+##	the mounted etc directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_all_custom_etc_files',`
+
+	webapp_read_all_custom_etc($1)
+	webapp_read_all_custom_net_conf($1)
+	webapp_read_all_custom_passwd_file($1)
+	webapp_read_all_custom_php_ini($1)
 
 ')
 
@@ -3720,6 +3805,31 @@ interface(`webapp_read_custom_net_conf',`
 	list_dirs_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t }, webapp_$1_net_conf_t)
 	read_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
 	read_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_net_conf_t}, webapp_$1_net_conf_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to
+##	read all web applications' custom
+##	network configuration files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_all_custom_net_conf',`
+
+	gen_require(`
+		attribute webapp_etc_type;
+		attribute webapp_net_conf_type;
+	')
+
+	list_dirs_pattern($1, { webapp_etc_type webapp_net_conf_type }, webapp_net_conf_type)
+	read_files_pattern($1, { webapp_etc_type webapp_net_conf_type }, webapp_net_conf_type)
+	read_lnk_files_pattern($1, { webapp_etc_type webapp_net_conf_type }, webapp_net_conf_type)
 
 ')
 
@@ -4054,6 +4164,30 @@ interface(`webapp_read_custom_passwd_file',`
 
 ########################################
 ## <summary>
+##	Allow the specified domain to read
+##	all web applications' custom passwd files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_all_custom_passwd_file',`
+
+	gen_require(`
+		attribute webapp_etc_type;
+		attribute webapp_passwd_file_type;
+	')
+
+	read_files_pattern($1, webapp_etc_type, webapp_passwd_file_type)
+	read_lnk_files_pattern($1, webapp_etc_type, webapp_passwd_file_type)
+
+')
+
+
+########################################
+## <summary>
 ##	Allow the specified domain to manage
 ##	the web application's custom passwd file.
 ## </summary>
@@ -4196,6 +4330,31 @@ interface(`webapp_read_custom_php_ini',`
 	read_lnk_files_pattern($2, { webapp_$1_etc_t webapp_$1_php_conf_t }, webapp_$1_php_conf_t)
 
 ')
+
+########################################
+## <summary>
+##	Allow the specified domain to read
+##	all web applications' custom PHP ini files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_all_custom_php_ini',`
+
+	gen_require(`
+		attribute webapp_etc_type;
+		attribute webapp_php_conf_type;
+	')
+
+	list_dirs_pattern($1, webapp_etc_type, webapp_php_conf_type)
+	read_files_pattern($1, { webapp_etc_type webapp_php_conf_type }, webapp_php_conf_type)
+	read_lnk_files_pattern($1, { webapp_etc_type webapp_php_conf_type }, webapp_php_conf_type)
+
+')
+
 
 ########################################
 ## <summary>
@@ -5014,6 +5173,32 @@ interface(`webapp_relabel_rb_scripts',`
 
 ########################################
 ## <summary>
+##	Allow the specified domain stat
+##	all web applications' all script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_search_all_scripts',`
+
+	gen_require(`
+		attribute webapp_content_type;
+		attribute webapp_script_type;
+		type httpd_sys_content_t;		
+	')
+
+	# No directories are labeled with webapp_script_type
+	search_dirs_pattern($1, { webapp_content_type httpd_sys_content_t }, webapp_content_type)
+	getattr_files_pattern($1, webapp_content_type, webapp_script_type)
+	getattr_lnk_files_pattern($1, webapp_content_type, webapp_script_type)
+
+')
+
+########################################
+## <summary>
 ##	Allow the specified domain read
 ##	all web applications' all script files.
 ## </summary>
@@ -5617,6 +5802,80 @@ interface(`webapp_relabel_all_files',`
 ########################################
 ## <summary>
 ##	Allow the specified domain
+##	to attach to namespaces of
+##	the web application.
+## </summary>
+## <param name="identity of parent domain">
+##	<summary>
+##	Identity of the web application domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to attach to namespaces of
+##	the web application.
+##	</summary>
+## </param>
+
+interface(`webapp_attach',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type $2;
+	')
+
+	# Allow signals between source and target processes
+	allow webapp_$1_t $2:process { signal sigkill sigstop };
+	allow $2 webapp_$1_t:process { signal sigchld };
+
+	# Allow the domain to use file
+	# descriptors of the parent process
+	allow $2 webapp_$1_t:fd use;
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	to attach to namespaces of
+##	the web application.
+## </summary>
+## <param name="identity of parent domain">
+##	<summary>
+##	Identity of the web application domain.
+##	Example, foo is the identity
+##	of the webapp_foo_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to attach to namespaces of
+##	the web application.
+##	</summary>
+## </param>
+
+interface(`webapp_child',`
+
+	gen_require(`
+		type webapp_$1_t;
+		type $2;
+	')
+
+	# Allow signals between source and target processes
+	allow webapp_$1_t $2:process { signal sigkill sigstop };
+	allow $2 webapp_$1_t:process { signal sigchld };
+
+	# Allow the target child to use file
+	# descriptors of the parent process
+	allow $2 webapp_$1_t:fd use;
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
 ##	networking using TCP.
 ## </summary>
 ## <param name="domain">
@@ -5896,16 +6155,17 @@ interface(`webapp_tcp_connect_to_all',`
 interface(`webapp_adm',`
 
 	gen_require(`
-		type webapp_unit_file_t;
+		type webapp_$1_t;
 	')
 
+	webapp_search_content_dirs($1, $2)
 	webapp_manage_files($1, $2)
 	webapp_stream_connect_to($1, $2)
 	webapp_tcp_connect_to($1, $2)
-        systemd_exec_systemctl($2)
-        allow $2 webapp_unit_file_t:file read_file_perms;
-        allow $2 webapp_unit_file_t:service manage_service_perms;
+	allow $2 webapp_$1_t:dir list_dir_perms;
+	allow $2 webapp_$1_t:file read_file_perms;
+	allow $2 webapp_$1_t:lnk_file read_lnk_file_perms;
+	allow $2 webapp_$1_t:process getattr;
 
 ')
-
 

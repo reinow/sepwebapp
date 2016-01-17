@@ -1,3 +1,11 @@
+###1.3.3
+
+Added tunables:
+
+webapp_id_block_suspend, webapp_id_exec_ping, webapp_id_manage_cgroups, webapp_id_rw_sysctls_net, webapp_id_sys_admin, webapp_id_sys_nice, and webapp_id_sys_tty_config
+
+Minor bugfixes.
+
 ###1.3.2
 
 Added tunables:
