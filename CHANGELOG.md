@@ -1,3 +1,17 @@
+###1.3.4
+
+Added support for Python bytecode files, systemd unit files, and connections to unreserved ports.
+
+Added tunables:
+
+webapp_id_connect_unreserved_port
+
+Added types:
+
+webapp_id_unit_file_t, webapp_id_pyc_script_t
+
+Minor bugfixes.
+
 ###1.3.3
 
 Added tunables:

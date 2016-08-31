@@ -1,6 +1,6 @@
 ##Overview
 
-This is a flexible SELinux security policy for web applications. With a few lines of code you can create a fine grained security policy for each of your web applications and make them run in separate domains, thereby strongly isolate them from one another. For each web application, there is of type defined for the process. Furthermore, for each web application, a set of file types are also defined. Types are also defined for, packets, port, netif, and node. A set of tunables are defined for each web application to allow fine grained control of permissions without modifying the policy source.
+This is a flexible SELinux security policy for web applications. With a few lines of code you can create a fine grained security policy for each of your web applications and make them run in separate domains, thereby strongly isolate them from one another. For each web application, there is a type defined for the process, and optionally a type is defined for each web application's subprocesses. Furthermore, for each web application, a set of file types are also defined. Types are also defined for, packets, port, netif, and node. A set of tunables are defined for each web application to allow fine grained control of permissions without modifying the policy source.
 
 ##How to
 
@@ -128,10 +128,12 @@ where id is the identity of the domain. Example, foo is the identity of the weba
 * webapp_id_php_script_t
 * webapp_id_pl_script_t
 * webapp_id_py_script_t
+* webapp_id_pyc_script_t
 * webapp_id_rb_script_t
 * webapp_id_rw_content_t
 * webapp_id_tmpfs_t
 * webapp_id_tmp_t
+* webapp_id_unit_file_t
 * webapp_id_var_run_t
 
 where id is the identity. Example, foo is the identity of the webapp_foo_log_t type.
@@ -155,6 +157,7 @@ Some application servers, like uWSGI, have native support for Linux namespaces. 
 * webapp_id_ld_so_cache_t
 * webapp_id_mount_t
 * webapp_id_net_conf_t
+* webapp_id_passwd_file_t
 
 where id is the identity. Example, foo is the identity of the webapp_foo_etc_runtime_t type.
 
@@ -182,6 +185,7 @@ For each web application the following tunables are defined:
 * webapp_id_connect_sssd
 * webapp_id_connect_syslog
 * webapp_id_connect_whois
+* webapp_id_dac_override
 * webapp_id_dbus_avahi
 * webapp_id_dbus_sssd
 * webapp_id_enable_cache
@@ -201,6 +205,7 @@ For each web application the following tunables are defined:
 * webapp_id_exec_ping
 * webapp_id_exec_self
 * webapp_id_exec_tmp
+* webapp_id_exec_tmpfs
 * webapp_id_exec_uwsgi
 * webapp_id_execmem
 * webapp_id_install_mode
