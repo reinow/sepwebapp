@@ -1745,16 +1745,16 @@ template(`webapp_perms',`
 		')
 		term_use_all_ttys(webapp_$1_t)
 		term_use_all_ptys(webapp_$1_t)
-		allow webapp_oribnet_t device_t:filesystem getattr;
-		allow webapp_oribnet_t devpts_t:filesystem getattr;
+		allow webapp_$1_t device_t:filesystem getattr;
+		allow webapp_$1_t devpts_t:filesystem getattr;
 		allow webapp_$1_t ptmx_t:chr_file rw_chr_file_perms;
 		allow webapp_$1_t devpts_t:dir list_dir_perms;
 		allow webapp_$1_t devpts_t:chr_file { rw_chr_file_perms setattr };
 	',`
 		term_dontaudit_use_all_ttys(webapp_$1_t)
 		term_dontaudit_use_all_ptys(webapp_$1_t)
-		dontaudit webapp_oribnet_t device_t:filesystem getattr;
-		dontaudit webapp_oribnet_t devpts_t:filesystem getattr;
+		dontaudit webapp_$1_t device_t:filesystem getattr;
+		dontaudit webapp_$1_t devpts_t:filesystem getattr;
 		dontaudit webapp_$1_t ptmx_t:chr_file rw_chr_file_perms;
 		dontaudit webapp_$1_t devpts_t:dir list_dir_perms;
 		dontaudit webapp_$1_t devpts_t:chr_file { rw_chr_file_perms setattr };
