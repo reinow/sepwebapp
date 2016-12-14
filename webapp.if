@@ -3,7 +3,7 @@
 
 ## <summary>SELinux policy module for web applications</summary>
 ## Author: Reino Wallin
-## Version 1.3.4
+## Version 1.3.5
 
 ##	This program is free software; you can redistribute it and/or
 ##	modify it under the terms of the GNU General Public License as
@@ -732,6 +732,7 @@ template(`webapp_types',`
 		attribute webapp_mount_type;
 		attribute webapp_tmp_type;
 		attribute webapp_tmpfs_type;
+		attribute webapp_var_lib_type;
 		attribute webapp_var_run_type;
 		attribute webapp_port_type;
 		attribute webapp_$1_file_type;
@@ -831,6 +832,10 @@ template(`webapp_types',`
 	# with custom php ini files
 	type webapp_$1_php_conf_t, webapp_php_conf_type, webapp_$1_file_type, webapp_file_type;
 	files_config_file(webapp_$1_php_conf_t)
+
+	# Type for variable data that dictates a programs state
+	type webapp_$1_var_lib_t, webapp_var_lib_type, webapp_$1_file_type, webapp_file_type;
+	files_type(webapp_$1_var_lib_t)
 
 	# Type for runtime files
 	type webapp_$1_var_run_t, webapp_var_run_type, webapp_$1_file_type, webapp_file_type;
@@ -1027,6 +1032,7 @@ template(`webapp_rb_files',`
 template(`webapp_child_domain',`
 
 	gen_require(`
+		type var_lib_t;
 		type var_run_t;
 		type webapp_$1_t;
 		type webapp_$2_t;
@@ -1041,6 +1047,8 @@ template(`webapp_child_domain',`
 	webapp_read_custom_net_conf($2, webapp_$1_t)
 	webapp_read_custom_passwd_file($2, webapp_$1_t)
 	webapp_read_custom_php_ini($2, webapp_$1_t)
+	manage_files_pattern(webapp_$1_t, { var_lib_t webapp_$2_var_lib_t }, webapp_$2_var_lib_t)
+	rw_files_pattern(webapp_$2_t, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
 	manage_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
 	rw_files_pattern(webapp_$2_t, { var_run_t webapp_$1_var_run_t }, webapp_$1_var_run_t)
 	manage_fifo_files_pattern(webapp_$1_t, { var_run_t webapp_$2_var_run_t }, webapp_$2_var_run_t)
@@ -1148,7 +1156,6 @@ template(`webapp_supervisord_domain',`
 
 template(`webapp_systemd_domain',`
 
-
 	type webapp_$1_unit_file_t;
 	systemd_unit_file(webapp_$1_unit_file_t)
 	webapp_init_domain($1)
@@ -1180,6 +1187,8 @@ template(`webapp_perms',`
 		type webapp_$1_netif_t;
 		type webapp_$1_node_t;
 		type httpd_config_t;
+		type var_lib_t;
+		type var_run_t;
 	')
 
 	# Internal privileges
@@ -1266,6 +1275,10 @@ template(`webapp_perms',`
 	# with a private type using a type transition.
 	fs_tmpfs_filetrans(webapp_$1_t, webapp_$1_tmpfs_t, { dir file lnk_file sock_file fifo_file })
 	webapp_manage_tmpfs_files($1, webapp_$1_t)
+
+	# Make the specified type usable for var lib files
+	filetrans_pattern(webapp_$1_t, var_lib_t, webapp_$1_var_lib_t, { file dir })
+	webapp_manage_var_lib_files($1, webapp_$1_t)
 
 	# Make the specified type usable for runtime files
 	filetrans_pattern(webapp_$1_t, var_run_t, webapp_$1_var_run_t, { file dir sock_file fifo_file })
@@ -1745,16 +1758,16 @@ template(`webapp_perms',`
 		')
 		term_use_all_ttys(webapp_$1_t)
 		term_use_all_ptys(webapp_$1_t)
-		allow webapp_oribnet_t device_t:filesystem getattr;
-		allow webapp_oribnet_t devpts_t:filesystem getattr;
+		allow webapp_$1_t device_t:filesystem getattr;
+		allow webapp_$1_t devpts_t:filesystem getattr;
 		allow webapp_$1_t ptmx_t:chr_file rw_chr_file_perms;
 		allow webapp_$1_t devpts_t:dir list_dir_perms;
 		allow webapp_$1_t devpts_t:chr_file { rw_chr_file_perms setattr };
 	',`
 		term_dontaudit_use_all_ttys(webapp_$1_t)
 		term_dontaudit_use_all_ptys(webapp_$1_t)
-		dontaudit webapp_oribnet_t device_t:filesystem getattr;
-		dontaudit webapp_oribnet_t devpts_t:filesystem getattr;
+		dontaudit webapp_$1_t device_t:filesystem getattr;
+		dontaudit webapp_$1_t devpts_t:filesystem getattr;
 		dontaudit webapp_$1_t ptmx_t:chr_file rw_chr_file_perms;
 		dontaudit webapp_$1_t devpts_t:dir list_dir_perms;
 		dontaudit webapp_$1_t devpts_t:chr_file { rw_chr_file_perms setattr };
@@ -4528,6 +4541,178 @@ interface(`webapp_relabel_custom_php_ini',`
 ########################################
 ## <summary>
 ##	Allow the specified domain to read
+##	the web application's var lib files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is the
+##	identity of the webapp_foo_var_lib_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`webapp_read_var_lib_files',`
+
+	gen_require(`
+		type var_lib_t;		
+		type webapp_$1_var_lib_t;
+	')
+
+	list_dirs_pattern($2, var_lib_t, webapp_$1_var_lib_t)
+	read_files_pattern($2, webapp_$1_var_lib_t, webapp_$1_var_lib_t)
+	read_lnk_files_pattern($2, webapp_$1_var_lib_t, webapp_$1_var_lib_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	the web application's var lib files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_var_lib_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed manage access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_var_lib_files',`
+	gen_require(`
+		type var_lib_t;
+		type webapp_$1_var_lib_t;
+	')
+
+	setattr_dirs_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+	manage_dirs_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+	manage_files_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+	manage_lnk_files_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to manage
+##	all web applications' var lib files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed read access.########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's var lib files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_var_lib_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_var_lib_files',`
+
+	gen_require(`
+		type var_lib_t;
+		type webapp_$1_var_lib_t;
+	')
+
+	relabelfrom_files_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+	relabelfrom_lnk_files_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's var lib files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_var_lib_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_var_lib_files',`
+
+	gen_require(`
+		type var_lib_t;
+		type webapp_$1_var_lib_t;
+	')
+
+	relabelto_files_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+	relabelto_lnk_files_pattern($2, { var_lib_t webapp_$1_var_lib_t }, webapp_$1_var_lib_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's var lib files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_var_lib_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_var_lib_files',`
+
+	webapp_relabelfrom_var_lib_files($1, $2)
+	webapp_relabelto_var_lib_files($1, $2)
+
+')
+
+##	</summary>
+## </param>
+
+interface(`webapp_manage_all_var_lib_files',`
+	gen_require(`
+		type var_lib_t;
+		attribute webapp_var_lib_type;
+	')
+
+	setattr_dirs_pattern($1, { var_lib_t webapp_var_lib_type }, webapp_var_lib_type)
+	manage_dirs_pattern($1, { var_lib_t webapp_var_lib_type }, webapp_var_lib_type)
+	manage_files_pattern($1, { var_lib_t webapp_var_lib_type }, webapp_var_lib_type)
+	manage_lnk_files_pattern($1, { var_lib_t webapp_var_lib_type }, webapp_var_lib_type)
+
+')
+
+
+
+
+########################################
+## <summary>
+##	Allow the specified domain to read
 ##	the web application's pid file.
 ## </summary>
 ## <param name="identity">
@@ -4567,7 +4752,7 @@ interface(`webapp_read_pid',`
 ## </param>
 ## <param name="domain">
 ##	<summary>
-##	Domain allowed read access.
+##	Domain allowed manage access.
 ##	</summary>
 ## </param>
 

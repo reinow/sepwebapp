@@ -1,3 +1,11 @@
+###1.3.5
+
+Added types:
+
+webapp_id_var_lib_t
+
+Thanks to pharasyte for pointing out a few typos which prevent the policy to build.
+
 ###1.3.4
 
 Added support for Python bytecode files, systemd unit files, and connections to unreserved ports.

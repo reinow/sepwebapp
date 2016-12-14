@@ -134,6 +134,7 @@ where id is the identity of the domain. Example, foo is the identity of the weba
 * webapp_id_tmpfs_t
 * webapp_id_tmp_t
 * webapp_id_unit_file_t
+* webapp_id_var_lib_t
 * webapp_id_var_run_t
 
 where id is the identity. Example, foo is the identity of the webapp_foo_log_t type.
