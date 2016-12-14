@@ -1,4 +1,4 @@
-policy_module(webapp, 1.3.4)
+policy_module(webapp, 1.3.5)
 
 # ------------------------------------------
 # Webapp security policy module
@@ -26,6 +26,10 @@ attribute webapp_domain;
 
 # Attribute for all web application files
 attribute webapp_file_type;
+
+# Attribute for web application variable data
+# that dictates a program's state
+attribute webapp_var_lib_type;
 
 # Attribute for web application runtime files
 attribute webapp_var_run_type;
