@@ -1,9 +1,9 @@
 ## SELinux policy module for web applications
-## Copyright (c) 2013, 2014, 2015, 2016 Reino Wallin
+## Copyright (c) 2013, 2014, 2015, 2016, 2017 Reino Wallin
 
 ## <summary>SELinux policy module for web applications</summary>
 ## Author: Reino Wallin
-## Version 1.3.5
+## Version 1.3.6
 
 ##	This program is free software; you can redistribute it and/or
 ##	modify it under the terms of the GNU General Public License as
@@ -532,6 +532,16 @@ template(`webapp_tunables',`
 	## </tunable>
 	gen_tunable(webapp_$1_setuid, false)
 
+	## <tunable name="webapp_id_fsetid dftval="false">
+	## <desc>
+	## <p>
+	## Allow override file owner and group requirements when
+        ## setting setuid or setgid bits on a file.
+	## </p>
+	## </desc>
+	## </tunable>
+	gen_tunable(webapp_$1_fsetid, false)
+
 	## <tunable name="webapp_id_enable_tuntap dftval="false">
 	## <desc>
 	## <p>
@@ -874,6 +884,38 @@ template(`webapp_assign_attributes',`
 	
 	# Assign the domain to be a web application domain
 	typeattribute webapp_$1_t webapp_domain;
+')
+
+########################################
+## <summary>
+##	Web application Java files template. 
+##	Create types for a Java web
+##	application's files, and grant
+##	read permission to these files for
+##	the web	application domain.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	Identity of file type. Example, foo is the
+##	identity of the webapp_foo_java_script_t file type.
+##	</summary>
+## </param>
+
+template(`webapp_java_files',`
+
+	gen_require(`
+		attribute webapp_script_type;
+		attribute webapp_$1_file_type;
+		type webapp_$1_t;
+	')
+
+	# This type is used for Java script files
+	type webapp_$1_java_script_t, webapp_script_type, webapp_$1_file_type;
+	files_type(webapp_$1_java_script_t)
+	# Allow the web application domain
+	# to read Java script files
+	webapp_read_java_scripts($1, webapp_$1_t)
+
 ')
 
 ########################################
@@ -1378,14 +1420,20 @@ template(`webapp_perms',`
 		allow webapp_$1_t self:capability sys_tty_config;
 	')
 
-	# Allow set the effective group ID of the current process,
+	# Allow set the effective group ID of the current process
 	tunable_policy(`webapp_$1_setgid',`
 		allow webapp_$1_t self:capability setgid;
 	')
 
-	# Allow set the effective user ID of the current process,
+	# Allow set the effective user ID of the current process
 	tunable_policy(`webapp_$1_setuid',`
 		allow webapp_$1_t self:capability setuid;
+	')
+
+	# Allow override file owner and group requirements when
+        # setting setuid or setgid bits on a file
+	tunable_policy(`webapp_$1_fsetid',`
+		allow webapp_$1_t self:capability fsetid;
 	')
 
 	# Allow web application server to change the
@@ -1471,6 +1519,10 @@ template(`webapp_perms',`
 	# Allow web application execute ping in the ping domain
 	tunable_policy(`webapp_$1_exec_ping',`
 		netutils_domtrans_ping(webapp_$1_t)
+		gen_require(`
+			type ping_t;
+		')
+		allow ping_t webapp_$1_t:unix_stream_socket { getattr ioctl };
 	')
 
 	# Allow web application execute uwsgi binary
@@ -4800,6 +4852,158 @@ interface(`webapp_manage_all_run_files',`
 ########################################
 ## <summary>
 ##	Allow the specified domain read the
+##	web application's Java script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_java_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_read_java_scripts',`
+
+	gen_require(`
+		type webapp_$1_java_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_java_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	read_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+	read_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain manage the
+##	web application's Java script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_java_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+
+interface(`webapp_manage_java_scripts',`
+
+	gen_require(`
+		type webapp_$1_java_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+	
+	# No directories are labeled with webapp_$1_java_script_t
+	list_dirs_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, { webapp_$1_content_t webapp_$1_rw_content_t })
+	manage_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+	manage_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+	
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel from
+##  	the web application's Java script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_java_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelfrom_java_scripts',`
+
+	gen_require(`
+		type webapp_$1_java_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelfrom_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+	relabelfrom_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain relabel to
+##  	the web application's Java script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_java_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabelto_java_scripts',`
+
+	gen_require(`
+		type webapp_$1_java_script_t;
+		type webapp_$1_content_t;
+		type webapp_$1_rw_content_t;
+	')
+
+	relabelto_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+	relabelto_lnk_files_pattern($2, { webapp_$1_content_t webapp_$1_rw_content_t }, webapp_$1_java_script_t)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain
+##	relabel from and relabel to
+##  	the web application's Java script files.
+## </summary>
+## <param name="identity">
+##	<summary>
+##	The identity of the file type. Example, foo is
+##	the identity of the webapp_foo_java_script_t type.
+##	</summary>
+## </param>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+
+interface(`webapp_relabel_java_scripts',`
+
+	webapp_relabelfrom_java_scripts($1, $2)
+	webapp_relabelto_java_scripts($1, $2)
+
+')
+
+########################################
+## <summary>
+##	Allow the specified domain read the
 ##	web application's Perl script files.
 ## </summary>
 ## <param name="identity">
@@ -6227,20 +6431,19 @@ interface(`webapp_attach',`
 ########################################
 ## <summary>
 ##	Allow the specified domain
-##	to attach to namespaces of
-##	the web application.
+##	to be a child of
+##	a web application.
 ## </summary>
 ## <param name="identity of parent domain">
 ##	<summary>
-##	Identity of the web application domain.
+##	Identity of the web application parent domain.
 ##	Example, foo is the identity
 ##	of the webapp_foo_t type.
 ##	</summary>
 ## </param>
-## <param name="domain">
+## <param name="child domain">
 ##	<summary>
-##	Domain allowed to attach to namespaces of
-##	the web application.
+##	The child domain.
 ##	</summary>
 ## </param>
 

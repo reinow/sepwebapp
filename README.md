@@ -1,8 +1,8 @@
-##Overview
+## Overview
 
 Security Enhanced Linux (SELinux) is an implementation of a Mandatory Access Control (MAC) mechanism in the Linux kernel. In computer security, Mandatory Access Control refers to a type of access control where the operating system controls the ability of a subject to access an object. MAC is typically used in military and highly secure government installations. A subject is usually a process or thread. Objects are typically directories, files, shared memory segments, TCP/UDP ports, or other processes. Subjects and objects each have security attributes. With the principle of least privilege and through a security policy, SELinux prevents compromising an entire system due to the compromise of a single application running with what would otherwise be elevated privileges. *SELinux policy module for web applications* is a flexible SELinux security policy for web applications. With a few lines of code you can create a fine grained security policy for each of your web applications and make them run in separate domains, thereby strongly isolate them from one another and from the underlying operating system. For each web application, there is a type defined for the process, and optionally a type is defined for each web application's subprocesses. Furthermore, for each web application, a set of file types are also defined. Types are also defined for, packets, port, netif, and node. A set of tunables are defined for each web application to allow fine grained control of permissions without modifying the policy source.
 
-##How to
+## How to
 
 Each web application is identified with an identity and created with a template. The identity is a keyword used to name the domain and its objects.
 
@@ -103,15 +103,15 @@ system_u:system_r:webapp_sevhost_t:s0:c0.c1023 3642 ? Sl  0:00 /usr/local/sbin/u
 
 For a full list of templates and interfaces, see [templates and interfaces documentation](http://www.oribium.net/services_webapp/ "Templates and Interfaces Documentation").
 
-##Types
+## Types
 
-###Process type
+### Process type
 
 * webapp_id_t
 
 where id is the identity of the domain. Example, foo is the identity of the webapp_foo_t domain.
 
-###File related types
+### File related types
 
 * webapp_id_cache_t
 * webapp_id_config_t
@@ -139,7 +139,7 @@ where id is the identity of the domain. Example, foo is the identity of the weba
 
 where id is the identity. Example, foo is the identity of the webapp_foo_log_t type.
 
-###Network related types
+### Network related types
 
 * webapp_id_client_packet_t
 * webapp_id_netif_t
@@ -149,7 +149,7 @@ where id is the identity. Example, foo is the identity of the webapp_foo_log_t t
 
 where id is the identity. Example, foo is the identity of the webapp_foo_port_t type.
 
-###Linux namespace related types
+### Linux namespace related types
 
 Some application servers, like uWSGI, have native support for Linux namespaces. Linux namespaces are an elegant way to detach the process from a specific layer of the kernel and assign it to a new one. You can, for instance, mount a specific etc directory to each of the web applications, but you can also create specific PIDs, IPC, and networking for each of the web applications. The types below are related to Linux namespaces. If you are using uWSGI, there is a [snippet](http://uwsgi-docs.readthedocs.org/en/latest/Snippets.html "uWSGI snippet") explaining how to run the emperor process in one domain, and each web application's worker processes in a separate domain.
 
@@ -162,7 +162,7 @@ Some application servers, like uWSGI, have native support for Linux namespaces. 
 
 where id is the identity. Example, foo is the identity of the webapp_foo_etc_runtime_t type.
 
-##Tunables
+## Tunables
 
 For each web application the following tunables are defined:
 
@@ -209,6 +209,7 @@ For each web application the following tunables are defined:
 * webapp_id_exec_tmpfs
 * webapp_id_exec_uwsgi
 * webapp_id_execmem
+* webapp_id_fsetid
 * webapp_id_install_mode
 * webapp_id_manage_cgroups
 * webapp_id_manage_config
@@ -235,7 +236,7 @@ For each web application the following tunables are defined:
 
 All tunables defaults to false. Hopefully the names are self-explanatory.
 
-##File context
+## File context
 
 For each web application it is required to label the related files. Below is an example on file context entries for a Python web application. This example is based on the Tornado application server, managed by Supervisord.
 
@@ -272,10 +273,10 @@ This is an example of a Joomla 3 web application and the uWSGI application serve
 /var/www/example\.com/public_html/.*\.php	--	gen_context(system_u:object_r:webapp_cms_php_script_t,s0)
 ```
 
-##Development
+## Development
 
 This policy was developed on a CentOS 6 box, but since version 1.3.0 it is merged to CentOS 7. With some minor tweaks you may get it work on other Linux distros as well. 
 
-##Feedback
+## Feedback
 
 I would appreciate feedback, and suggestions. Do you want to test the policy? Please feel free get in touch.
