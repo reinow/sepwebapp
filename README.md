@@ -120,9 +120,9 @@ where id is the identity of the domain. Example, foo is the identity of the weba
 * webapp_id_etc_t
 * webapp_id_exec_t
 * webapp_id_initrc_exec_t
+* webapp_id_java_script_t
 * webapp_id_ld_so_cache_t
 * webapp_id_log_t
-* webapp_id_mount_t
 * webapp_id_net_conf_t
 * webapp_id_php_conf_t
 * webapp_id_php_script_t
@@ -139,17 +139,7 @@ where id is the identity of the domain. Example, foo is the identity of the weba
 
 where id is the identity. Example, foo is the identity of the webapp_foo_log_t type.
 
-### Network related types
-
-* webapp_id_client_packet_t
-* webapp_id_netif_t
-* webapp_id_node_t
-* webapp_id_port_t
-* webapp_id_server_packet_t
-
-where id is the identity. Example, foo is the identity of the webapp_foo_port_t type.
-
-### Linux namespace related types
+### Linux namespace file related types
 
 Some application servers, like uWSGI, have native support for Linux namespaces. Linux namespaces are an elegant way to detach the process from a specific layer of the kernel and assign it to a new one. You can, for instance, mount a specific etc directory to each of the web applications, but you can also create specific PIDs, IPC, and networking for each of the web applications. The types below are related to Linux namespaces. If you are using uWSGI, there is a [snippet](http://uwsgi-docs.readthedocs.org/en/latest/Snippets.html "uWSGI snippet") explaining how to run the emperor process in one domain, and each web application's worker processes in a separate domain.
 
@@ -161,6 +151,16 @@ Some application servers, like uWSGI, have native support for Linux namespaces. 
 * webapp_id_passwd_file_t
 
 where id is the identity. Example, foo is the identity of the webapp_foo_etc_runtime_t type.
+
+### Network related types
+
+* webapp_id_client_packet_t
+* webapp_id_netif_t
+* webapp_id_node_t
+* webapp_id_port_t
+* webapp_id_server_packet_t
+
+where id is the identity. Example, foo is the identity of the webapp_foo_port_t type.
 
 ## Tunables
 
