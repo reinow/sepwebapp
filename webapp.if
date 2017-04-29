@@ -6760,10 +6760,3 @@ interface(`webapp_adm',`
 
 ')
 
-#
-#/usr/share/selinux/devel/include/contrib/webapp.if: Syntax error on line 21458 , [type=COMMA]
-#/usr/share/selinux/devel/include/contrib/webapp.if: Syntax error on line 21459 , [type=COMMA]
-#/usr/share/selinux/devel/include/contrib/webapp.if: Syntax error on line 21490 , [type=COMMA]
-#/usr/share/selinux/devel/include/contrib/webapp.if: Syntax error on line 21491 , [type=COMMA]
-
-

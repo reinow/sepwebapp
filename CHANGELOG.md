@@ -1,5 +1,7 @@
 ### 1.3.6
 
+Added support for java applications
+
 Added tunables:
 
 webapp_id_fsetid
